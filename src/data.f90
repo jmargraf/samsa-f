@@ -49,6 +49,7 @@ subroutine read_input()
   implicit none
   character(len=36)        :: filename 
   integer                  :: i,j
+  character(len=3)         :: reference
 
   filename = trim(mol_name) // ".xyz"
 
@@ -56,7 +57,15 @@ subroutine read_input()
   read(10,*) natoms
   call allocate_geo
 
-  read(10,*) charge, mult
+  read(10,*) charge, mult, reference
+
+  if(reference == "rhf")then
+    calctype = "rhf"
+    spins = 1
+  elseif(reference == "uhf")then
+    calctype = "uhf"
+    spins = 2
+  endif
 
   do i=1,natoms
     read(10,*) atom(i),xyz(i,1),xyz(i,2),xyz(i,3)
@@ -171,6 +180,10 @@ subroutine dimensions()
     enddo
   enddo
 
+  write(*,*) ""
+  write(*,*) "  1e Dimension    = ", dim_1e
+  write(*,*) "  2e Dimension    = ", dim_2e
+
 ! Number of electrons
   nel = 0
   noccA = 0
@@ -181,11 +194,38 @@ subroutine dimensions()
   enddo
   nel = nel - charge
 
-  write(*,*) ""
-  write(*,*) "  1e Dimension    = ", dim_1e
-  write(*,*) "  2e Dimension    = ", dim_2e
-  write(*,*) "  No of electrons = ", nel 
-  write(*,*) "  No of electrons = ", nel 
+  if(spins == 1)then
+    if(mod(nel,2) == 0)then
+      even = .true.
+      noccA = nel/2 + (mult-1)/2
+      noccB = nel/2 - (mult-1)/2
+    else
+      write(*,*) "  !Error! RHF calc impossible with even no of electrons "
+      call exit(666)
+    endif
+  elseif(spins == 2)then
+    if(mod(nel,2) == 0)then
+      even = .true.
+      noccA = nel/2 + (mult-1)/2
+      noccB = nel/2 - (mult-1)/2
+      if(mod(mult,2) == 0)then
+        write(*,*) "  !Error! Even no of electrons and mult ", mult," is impossible"
+        call exit(666)
+      endif
+    else
+      even = .false.
+      noccA = nel/2 + 1 + (mult-1)/2
+      noccB = nel/2 - (mult-1)/2
+      if(mod(mult,2) == 1)then
+        write(*,*) "  !Error! Odd no of electrons and mult ", mult," is impossible"
+        call exit(666)
+      endif
+    endif
+  endif
+
+  write(*,*) "  No of electrons   = ", nel 
+  write(*,*) "  No of occ orbs(A) = ", noccA 
+  write(*,*) "  No of occ orbs(B) = ", noccB
   write(*,*) ""
 
 

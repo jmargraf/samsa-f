@@ -2,6 +2,7 @@ module module_data
   implicit none
 
 ! Calcularion details
+  character(len=1024)                           :: exe_path
   character(len=32)                             :: mol_name
   integer                                       :: natoms
   integer                                       :: charge
@@ -34,6 +35,8 @@ module module_data
   double precision, allocatable                 :: Dens(:,:,:)  
   double precision, allocatable                 :: Eps(:,:)           
   double precision, allocatable                 :: Hcore(:,:)       
+
+! Integrals
   double precision, allocatable                 :: Sij(:,:)         
   double precision, allocatable                 :: Vij(:,:)         
   double precision, allocatable                 :: Tij(:,:)         
@@ -71,6 +74,8 @@ subroutine read_input()
     read(10,*) atom(i),xyz(i,1),xyz(i,2),xyz(i,3)
   enddo
   xyz = xyz*ang2bohr
+
+  close(10)
 
   write(*,*) ""
   write(*,*) "  Number of atoms = ", natoms
@@ -117,7 +122,7 @@ subroutine allocate_SCFmat()
            Sij(dim_1e,dim_1e),         &
            Vij(dim_1e,dim_1e),         &
            Tij(dim_1e,dim_1e),         &
-           ERI(dim_2e),                &
+           ERI(dim_2e)                 &
           )
 
 end subroutine allocate_SCFmat

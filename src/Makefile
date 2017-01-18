@@ -1,14 +1,23 @@
-../bin/samsa.x : constants.o data.o energy.o samsa.o
-	gfortran constants.o data.o energy.o samsa.o -o ../bin/samsa.x
+COMP = ifort 
+FLAGS = -I${MKLROOT}/include/intel64/lp64 -I${MKLROOT}/include
+LIBS = ${MKLROOT}/lib/intel64/libmkl_blas95_lp64.a ${MKLROOT}/lib/intel64/libmkl_lapack95_lp64.a
+
+#-L/apps/compilers/intel/2016/mkl/lib/intel64 -lmkl_lapack95_lp64 -lmkl_blas95_lp64.a
+
+../bin/samsa.x : constants.o data.o ints.o energy.o samsa.o
+	${COMP} ${FLAGS} constants.o data.o ints.o energy.o samsa.o ${LIBS} -o ../bin/samsa.x
 
 constants.o : constants.f90
-	gfortran -c constants.f90
+	${COMP} ${FLAGS} -c constants.f90 ${LIBS}
 
 data.o : data.f90
-	gfortran -c data.f90
+	${COMP} ${FLAGS} -c data.f90 ${LIBS}
 
-energy.o : energy.f90
-	gfortran -c energy.f90
+ints.o : ints.f90
+	${COMP} ${FLAGS} -c ints.f90 ${LIBS}
+
+energy.o : energy.f90 
+	${COMP} ${FLAGS} -c energy.f90 ${LIBS}
 
 samsa.o : samsa.f90
-	gfortran -c samsa.f90
+	${COMP} ${FLAGS} -c samsa.f90 ${LIBS}

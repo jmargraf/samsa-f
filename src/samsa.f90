@@ -8,7 +8,15 @@ program samsa
 
 ! read input and calculate dimensions
   call get_command_argument(1, mol_name)
-  write(*,*) "Start calculation: ", trim(mol_name)," !"
+  write(*,*) ""
+  write(*,*) "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+  write(*,*) "  SAMSA - a Semiempirical and Ab Initio Molecular Simulation Application  "
+  write(*,*) "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+  write(*,*) ""
+  write(*,*) "  (c) 2017 Johannes Margraf "
+  write(*,*) ""
+  write(*,*) "  starting calculation: ", trim(mol_name)
+  write(*,*) ""
 
   call read_input()
   call dimensions()

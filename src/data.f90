@@ -73,7 +73,7 @@ subroutine read_input()
   write(*,*) "  Geometry (Bohr):"
   write(*,*) ""
   do i=1,natoms
-    write(*,*) " ",atom(i),xyz(i,1),xyz(i,2),xyz(i,3)
+    write(*,*) "    ",atom(i),xyz(i,1),xyz(i,2),xyz(i,3)
   enddo
   write(*,*) ""
 

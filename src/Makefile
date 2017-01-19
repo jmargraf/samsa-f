@@ -1,23 +1,31 @@
-COMP = ifort 
-FLAGS = -I${MKLROOT}/include/intel64/lp64 -I${MKLROOT}/include
-LIBS = ${MKLROOT}/lib/intel64/libmkl_blas95_lp64.a ${MKLROOT}/lib/intel64/libmkl_lapack95_lp64.a
+COMP = gfortran
+#COMP = ifort 
+FLAGS = 
+#BLASLIB = -lblas
+#LAPALIB = -llapack
+MKLLIB = ${MKLROOT}/lib/intel64/libmkl_blas95_lp64.a ${MKLROOT}/lib/intel64/libmkl_lapack95_lp64.a -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_sequential.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl
 
-#-L/apps/compilers/intel/2016/mkl/lib/intel64 -lmkl_lapack95_lp64 -lmkl_blas95_lp64.a
-
-../bin/samsa.x : constants.o data.o ints.o energy.o samsa.o
-	${COMP} ${FLAGS} constants.o data.o ints.o energy.o samsa.o ${LIBS} -o ../bin/samsa.x
+../bin/samsa.x : constants.o io.o data.o ints.o energy.o scf.o samsa.o
+	${COMP} ${FLAGS} constants.o io.o data.o ints.o energy.o scf.o samsa.o ${MKLLIB} -o ../bin/samsa.x
 
 constants.o : constants.f90
-	${COMP} ${FLAGS} -c constants.f90 ${LIBS}
+	${COMP} ${FLAGS} -c constants.f90 #${MKLLIB} 
+
+io.o : io.f90
+	${COMP} ${FLAGS} -c io.f90
 
 data.o : data.f90
-	${COMP} ${FLAGS} -c data.f90 ${LIBS}
+	${COMP} ${FLAGS} -c data.f90 #${MKLLIB} 
 
 ints.o : ints.f90
-	${COMP} ${FLAGS} -c ints.f90 ${LIBS}
+	${COMP} ${FLAGS} -c ints.f90 #${MKLLIB}
 
-energy.o : energy.f90 
-	${COMP} ${FLAGS} -c energy.f90 ${LIBS}
+energy.o : energy.f90
+	${COMP} ${FLAGS} -c energy.f90 #${MKLLIB} 
+
+scf.o : scf.f90
+	 ${COMP} ${FLAGS} -c scf.f90
 
 samsa.o : samsa.f90
-	${COMP} ${FLAGS} -c samsa.f90 ${LIBS}
+	${COMP} ${FLAGS} -c samsa.f90 #${MKLLIB} 
+

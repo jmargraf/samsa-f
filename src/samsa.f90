@@ -4,7 +4,8 @@ program samsa
   use module_data,   only : dimensions
   use module_data,   only : allocate_SCFmat 
   use module_energy, only : calc_Enuc
-  use module_ints,   only : calc_Ints,test_lapack
+  use module_ints,   only : calc_Ints
+  use module_scf,    only : guess,dia_S
   implicit none
 
 ! read input and calculate dimensions
@@ -28,9 +29,10 @@ program samsa
 
 ! calc ints
   call calc_Ints()
-  call test_lapack()
-  
+  call dia_S() 
+ 
 ! initial guess
+  call guess()
 
 ! run scf
 

@@ -38,6 +38,7 @@ module module_data
 
 ! Integrals
   double precision, allocatable                 :: Sij(:,:)         
+  double precision, allocatable                 :: S12(:,:)
   double precision, allocatable                 :: Vij(:,:)         
   double precision, allocatable                 :: Tij(:,:)         
   double precision, allocatable                 :: ERI(:)      
@@ -119,6 +120,7 @@ subroutine allocate_SCFmat()
            Dens(dim_1e,dim_1e,spins),  &
            Eps(dim_1e,spins),          &
            Hcore(dim_1e,dim_1e),       &
+           S12(dim_1e,dim_1e),         &
            Sij(dim_1e,dim_1e),         &
            Vij(dim_1e,dim_1e),         &
            Tij(dim_1e,dim_1e),         &

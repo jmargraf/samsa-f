@@ -49,7 +49,7 @@ end subroutine calc_Ints
 subroutine calc_Overlap()
   use module_data,        only : Sij,dim_1e
   implicit none
-  integer                     :: i,j
+  integer                     :: i,j,a,b
   character(len=4)            :: filename="ints"
   double precision            :: temp
   character(len=32)           :: scratch  
@@ -65,7 +65,7 @@ subroutine calc_Overlap()
 
   do i=1,dim_1e
     do j=1,i
-      read(20,*) temp
+      read(20,*) a, b, temp
       Sij(i,j) = temp
       Sij(j,i) = temp
     enddo
@@ -82,29 +82,30 @@ end subroutine
 subroutine calc_Kinetic()
   use module_data,        only : Tij,dim_1e
   implicit none
-  integer                     :: i,j
+  integer                     :: i,j,a,b
   character(len=4)            :: filename="ints"
   double precision            :: temp
   character(len=32)           :: scratch
 
   write(*,*) "     ... fetching Tij "
 
-  open(20,file=trim(filename),status='old',action='read')
+  open(30,file=trim(filename),status='old',action='read')
 
   do
-    read(20,*) scratch
+    read(30,*) scratch
     if(trim(scratch) == "KINETIC") exit
   enddo
 
   do i=1,dim_1e
     do j=1,i
-      read(20,*) temp
+      read(30,*) a,b,temp
+      write(*,*) temp
       Tij(i,j) = temp
       Tij(j,i) = temp
     enddo
   enddo
 
-  close(20)
+  close(30)
 
 end subroutine
 
@@ -115,29 +116,30 @@ end subroutine
 subroutine calc_CoreEl()
   use module_data,        only : Vij,dim_1e
   implicit none
-  integer                     :: i,j
+  integer                     :: i,j,a,b
   character(len=4)            :: filename="ints"
   double precision            :: temp
   character(len=32)           :: scratch
 
   write(*,*) "     ... fetching Vij "
 
-  open(20,file=trim(filename),status='old',action='read')
+  open(40,file=trim(filename),status='old',action='read')
 
   do
-    read(20,*) scratch
+    read(40,*) scratch
     if(trim(scratch) == "POTENTIAL") exit
   enddo
 
   do i=1,dim_1e
     do j=1,i
-      read(20,*) temp
+      read(40,*) a,b,temp
+      write(*,*) temp
       Vij(i,j) = temp
       Vij(j,i) = temp
     enddo
   enddo
 
-  close(20)
+  close(40)
 
 end subroutine
 
@@ -162,7 +164,7 @@ end subroutine
 subroutine calc_ERI()
   use module_data,        only : ERI,dim_1e
   implicit none
-  integer             :: i,j,k,l
+  integer             :: i,j,k,l,a,b,c,d
   integer             :: ij,kl,ijkl
   character(len=4)            :: filename="ints"
   double precision            :: temp
@@ -185,7 +187,7 @@ subroutine calc_ERI()
           kl = k*(k+1)/2 + l
           if(ij>=kl)then
             ijkl = ij*(ij+1)/2 + kl + 1
-            read(20,*) temp
+            read(20,*) a,b,c,d,temp
             ERI(ijkl) = temp
           endif
         enddo
@@ -197,39 +199,4 @@ subroutine calc_ERI()
 
 end subroutine
 
-
-!#############################################
-!#            Test LAPACK        
-!#############################################
-subroutine test_lapack()
-  implicit none
-
-  double precision :: a(4,4), d(4), e(3), t(3), ew(4)
-  integer          :: inf, tw(8), z
-
-!  external dgeprt
-!  external dsteqr, dsytrd
-
-  data a/1, 2, 3, 4, &
-        2, 2, 6, 4,  & 
-        3, 6, 5, 6,  &
-        4, 4, 6, 6/
-
-!  call dgeprt(4,5,a,'a=')
-  call dsytrd('U', 4, a, 4, d, e, t, tw, 4, inf)
-
-  if (inf .eq. 0) then
-     write (*,*) 'successful tridiagonal reduction'
-  else if (inf .lt. 0) then
-     write (*,*) 'illegal value at: %d', -inf
-     stop
-  else
-     write (*,*) 'unknown result (can''t happen!)'
-     stop
-  end if
-
-end subroutine
-
-
 end module module_ints
-

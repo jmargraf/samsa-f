@@ -5,8 +5,38 @@ module module_energy
   double precision                            :: Enuc     = 0.0d0
   double precision                            :: Eelec    = 0.0d0         
   double precision                            :: Etot     = 0.0d0          
+  double precision                            :: Eold     = 0.0d0 
 
 contains
+
+!#############################################
+!#            Calculate E_nuclear
+!#############################################
+subroutine calc_Energy
+  use module_data, only      : Dens,Hcore,Fock,Spins,dim_1e
+  implicit none
+  integer                   :: iSpin,i,j 
+
+  Eelec = 0.0d0
+  Etot  = 0.0d0
+
+  do iSpin=1,Spins
+    do i=1,dim_1e
+      do j=1,dim_1e
+        Eelec = Eelec + Dens(i,j,iSpin)               & 
+                      *(Hcore(i,j) + Fock(i,j,iSpin)) &
+                      *(1.0d0/dble(Spins))
+      enddo
+    enddo
+  enddo
+
+  Etot = Eelec + Enuc
+
+  write(*,*) "Eelec = ", Eelec
+  write(*,*) "Etot  = ", Etot
+
+
+end subroutine calc_Energy
 
 !#############################################
 !#            Calculate E_nuclear

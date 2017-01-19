@@ -12,7 +12,6 @@ module module_data
   character(len=2), allocatable                 :: atom(:)
   double precision, allocatable                 :: xyz(:,:)
   double precision, allocatable                 :: rAB(:,:)
-  logical                                       :: uhf
   character(len=3)                              :: calctype = "rhf"
   integer                                       :: spins = 1
 

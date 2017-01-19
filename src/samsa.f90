@@ -5,7 +5,7 @@ program samsa
   use module_data,   only : allocate_SCFmat 
   use module_energy, only : calc_Enuc
   use module_ints,   only : calc_Ints
-  use module_scf,    only : guess,dia_S
+  use module_scf,    only : guess,dia_S,run_SCF
   implicit none
 
 ! read input and calculate dimensions
@@ -35,6 +35,7 @@ program samsa
   call guess()
 
 ! run scf
+  call run_SCF()
 
 ! run properties
 

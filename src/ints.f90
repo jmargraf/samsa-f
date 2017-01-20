@@ -25,7 +25,8 @@ subroutine calc_Ints()
                                trim(basis_set)," ", &  
                                dim_1e
 
-  write(*,*) "      ",trim(command)
+  write(*,*) "    ",trim(command)
+  write(*,*) ""
 
   call system(trim(command))
 

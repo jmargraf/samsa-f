@@ -7,7 +7,7 @@ contains
 !#            Population Analysis  
 !#############################################
 subroutine pop_Mulliken()
-  use module_data, only            : natoms,dim_1e
+  use module_data,             only : natoms,dim_1e
   implicit none
 !  integer                         :: i,j
 !  double precision, allocatable   :: PopQ(:)
@@ -20,9 +20,9 @@ end subroutine pop_Mulliken
 !#           Print Orbital Energies
 !#############################################
 subroutine print_Eigen()
-  use module_data, only            : Eps,dim_1e,Spins
-  use module_constants, only       : ha2eV
-  use module_io, only              : print_SVec,print_Vec
+  use module_data,            only : Eps,dim_1e,Spins
+  use module_constants,       only : ha2eV
+  use module_io,              only : print_SVec,print_Vec
   implicit none
   integer                         :: i,j
   double precision, allocatable   :: Eps_eV(:,:)

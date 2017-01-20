@@ -17,6 +17,11 @@ subroutine run_SCF
   implicit none
   integer                  :: iSCF
 
+  write(*,*) ""
+  write(*,*) "   Starting SCF ..."
+  write(*,*) ""
+  write(*,*) "        #           Etot                 dE                  Drmsd      Damp"
+
   do iSCF=1,MaxSCF
 
     Eold = Etot
@@ -370,7 +375,10 @@ subroutine check_Conv()
   endif
 
   if(Drmsd<Dconv .and. abs(dE)<Econv)then
-    write(*,*) "SCF converged"
+    write(*,*) " "
+    write(*,*) "    SCF converged (hurra)!"
+    write(*,*) " "
+
     SCFconv = .true.
   endif
 

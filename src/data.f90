@@ -5,15 +5,11 @@ module module_data
   character(len=1024)                           :: exe_path
   character(len=32)                             :: mol_name
   integer                                       :: natoms
-  integer                                       :: charge
-  integer                                       :: mult
   integer                                       :: dim_1e,dim_2e
   integer                                       :: nel, noccA, noccB
   character(len=2), allocatable                 :: atom(:)
   double precision, allocatable                 :: xyz(:,:)
   double precision, allocatable                 :: rAB(:,:)
-  character(len=3)                              :: calctype = "rhf"
-  integer                                       :: spins = 1
 
 ! Basis set details
   integer, allocatable                          :: basis(:)
@@ -21,6 +17,10 @@ module module_data
   character(len=3)                              :: basis_set = "min"
 
 ! SCF options
+  integer                                       :: charge = 0
+  integer                                       :: mult = 1
+  character(len=3)                              :: calctype = "rhf"
+  integer                                       :: spins = 1
   integer                                       :: maxSCF = 1000
   double precision                              :: Econv = 1.0d-9
   double precision                              :: Dconv = 1.0d-9
@@ -52,7 +52,8 @@ subroutine read_input()
   implicit none
   character(len=36)        :: filename 
   integer                  :: i,j
-  character(len=3)         :: reference
+  character(len=1024)      :: keywords
+  character(len=64)        :: argument
 
   filename = trim(mol_name) // ".xyz"
 
@@ -60,13 +61,20 @@ subroutine read_input()
   read(10,*) natoms
   call allocate_geo
 
-  read(10,*) charge, mult, reference
+  write(*,*) ""
+  write(*,*) "  Keywords:"
+  write(*,*) ""
 
-  if(reference == "rhf")then
-    calctype = "rhf"
+  read(10,'(A)') keywords
+  do
+    argument = split_string(keywords)
+    if(argument=='')exit
+    call parse_option(argument)  
+  enddo
+
+  if(calctype == "RHF")then
     spins = 1
-  elseif(reference == "uhf")then
-    calctype = "uhf"
+  elseif(calctype == "UHF")then
     spins = 2
   endif
 
@@ -234,8 +242,116 @@ subroutine dimensions()
   write(*,*) "  No of occ orbs(B) = ", noccB
   write(*,*) ""
 
-
 end subroutine dimensions
+
+
+!#############################################
+!#              Parse Options
+!#############################################
+subroutine parse_option(argument)
+  implicit none
+  character(len=64),intent(in)     :: argument
+  character(len=64)                :: uargument
+
+  uargument = uppercase(argument)
+
+  if(uargument(1:7)=='CHARGE=')then
+    read(UArgument(8:),*) charge
+    write(*,*) '    CHARGE=', charge
+
+  elseif(uargument(1:5)=='MULT=')then
+    read(UArgument(6:),*) mult
+    write(*,*) '    MULT=', mult
+
+  elseif(uargument(1:5)=='CALC=')then
+    read(UArgument(6:),*) calctype
+    write(*,*) '    CALC=', calctype
+
+  elseif(uargument(1:7)=='MAXSCF=')then
+    read(UArgument(8:),*) maxSCF
+    write(*,*) '    MAXSCF=', maxSCF
+
+  elseif(uargument(1:6)=='ECONV=')then
+    read(UArgument(7:),*) Econv
+    write(*,*) '    ECONV=', Econv
+
+  elseif(uargument(1:6)=='DCONV=')then
+    read(UArgument(7:),*) Dconv
+    write(*,*) '    DCONV=', Dconv
+
+  elseif(uargument(1:5)=='DAMP=')then
+    read(UArgument(6:),*) DAMP
+    DoDamp = .true.
+    write(*,*) '    DAMP=',DAMP
+
+  elseif(uargument(1:7)=='DODAMP=')then
+    if(uargument(8:9)=='ON')then
+      DoDamp = .true.
+      write(*,*) '    Damping turned on'
+    elseif(uargument(8:10)=='OFF')then
+      DoDamp = .false.
+      write(*,*) '    Damping turned off'
+    else
+      write(*,*) "    Unknown Argument :", uargument
+    endif
+
+  elseif(uargument(1:6)=='GUESS=')then
+    if(uargument(7:10)=='CORE')then
+      guess = "core"
+      write(*,*) '    GUESS=CORE'
+    else
+      write(*,*) "    Unknown Argument :", uargument
+    endif
+
+  else
+    write(*,*) "    Unknown Argument :", uargument
+  endif
+  
+end subroutine parse_option
+
+
+!#############################################
+!#              Split Spring              
+!#############################################
+function split_string(string) result(word)
+  implicit none
+  character(len=*), intent(inout) :: string
+  character(len=len(string)) :: word
+  integer :: i
+
+! Remove trailing blanks
+  string=adjustl(string)
+! Split first word from string
+  i = index(string,' ')
+  if(i<1)then
+    word   = string
+    string = ''
+  else
+    word   = string(1:i-1)
+    string = adjustl(string(i+1:))
+  endif
+
+end function split_string
+
+
+!#############################################
+!#              Make Uppercase                   
+!#############################################
+function uppercase(string) result(upper)
+  implicit none
+  character(len=*), intent(in) :: string
+  character(len=len(string))   :: upper
+  integer :: i
+
+! Convert to uppercase
+  do i=1,len(string)
+    if(string(i:i) >= "a" .and. string(i:i) <= "z") then
+      upper(i:i)=achar(iachar(string(i:i))-32)
+    else
+      upper(i:i)=string(i:i)
+    endif
+  enddo
+end function uppercase
 
 
 end module module_data

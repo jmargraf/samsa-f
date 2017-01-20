@@ -195,8 +195,8 @@ subroutine dimensions()
   enddo
 
   write(*,*) ""
-  write(*,*) "  1e Dimension    = ", dim_1e
-  write(*,*) "  2e Dimension    = ", dim_2e
+  write(*,*) "  1e Dimension      = ", dim_1e
+  write(*,*) "  2e Dimension      = ", dim_2e
 
 ! Number of electrons
   nel = 0

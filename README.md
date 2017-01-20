@@ -1,7 +1,7 @@
 # samsa-f
 Fortran version of samsa
 
-Keywords:
+Keywords (not case-sensitive):
 
 CHARGE=<int>
 MULT=<int>

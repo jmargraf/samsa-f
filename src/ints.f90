@@ -15,16 +15,10 @@ subroutine calc_Ints()
   use module_data, only      : mol_name,basis_set,dim_1e
   implicit none
   character(len=1024)       :: command 
-! integer                   :: i,j
-! integer                   :: q1,q2
 
   write(*,*) ""
   write(*,*) "  Running Psi4 integral package ..."
   write(*,*) ""
-
-!  command = "perl ../tools/runpsiints.pl " // &
-!                    trim(mol_name) // " " //  &
-!                   trim(basis_set) // " " // 
 
   write(command,*) "perl ../tools/runpsiints.pl " , &
                                trim(mol_name)," " , &
@@ -99,7 +93,7 @@ subroutine calc_Kinetic()
   do i=1,dim_1e
     do j=1,i
       read(30,*) a,b,temp
-      write(*,*) temp
+!      write(*,*) temp
       Tij(i,j) = temp
       Tij(j,i) = temp
     enddo
@@ -133,7 +127,7 @@ subroutine calc_CoreEl()
   do i=1,dim_1e
     do j=1,i
       read(40,*) a,b,temp
-      write(*,*) temp
+!      write(*,*) temp
       Vij(i,j) = temp
       Vij(j,i) = temp
     enddo
@@ -155,6 +149,8 @@ subroutine calc_Hcore()
 
   Hcore = Tij + Vij
 
+  deallocate(Tij,Vij)
+
 end subroutine
 
 
@@ -172,10 +168,10 @@ subroutine calc_ERI()
 
   write(*,*) "     ... fetching ERI "
 
-  open(20,file=trim(filename),status='old',action='read')
+  open(50,file=trim(filename),status='old',action='read')
 
   do
-    read(20,*) scratch
+    read(50,*) scratch
     if(trim(scratch) == "REPULSION") exit
   enddo
 
@@ -187,7 +183,7 @@ subroutine calc_ERI()
           kl = k*(k+1)/2 + l
           if(ij>=kl)then
             ijkl = ij*(ij+1)/2 + kl + 1
-            read(20,*) a,b,c,d,temp
+            read(50,*) a,b,c,d,temp
             ERI(ijkl) = temp
           endif
         enddo
@@ -195,7 +191,7 @@ subroutine calc_ERI()
     enddo
   enddo
 
-  close(20)
+  close(50)
 
 end subroutine
 

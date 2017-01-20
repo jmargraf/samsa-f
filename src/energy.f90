@@ -23,8 +23,8 @@ subroutine calc_Energy
   do iSpin=1,Spins
     do i=1,dim_1e
       do j=1,dim_1e
-        Eelec = Eelec + Dens(i,j,iSpin)               & 
-                      *(Hcore(i,j) + Fock(i,j,iSpin)) &
+        Eelec = Eelec + Dens(i,j,iSpin)                & 
+                      *(Hcore(i,j) + Fock(i,j,iSpin))  &
                       *(1.0d0/dble(Spins))
       enddo
     enddo
@@ -32,8 +32,8 @@ subroutine calc_Energy
 
   Etot = Eelec + Enuc
 
-  write(*,*) "Eelec = ", Eelec
-  write(*,*) "Etot  = ", Etot
+!  write(*,*) "Eelec = ", Eelec
+!  write(*,*) "Etot  = ", Etot
 
 
 end subroutine calc_Energy

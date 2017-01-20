@@ -24,7 +24,7 @@ module module_data
   integer                                       :: maxSCF = 1000
   double precision                              :: Econv = 1.0d-9
   double precision                              :: Dconv = 1.0d-9
-  double precision                              :: Damp = 0.5
+  double precision                              :: Damp = 0.5d0
   logical                                       :: DoDamp = .true.
   character                                     :: guess = "core"
 

@@ -29,8 +29,10 @@ program samsa
 
 ! calc ints
   call calc_Ints()
+
+! calc transformation matrix
   call dia_S() 
- 
+  
 ! initial guess
   call guess()
 

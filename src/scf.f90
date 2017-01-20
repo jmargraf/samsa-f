@@ -12,7 +12,7 @@ contains
 !#              Run SCF Loop        
 !#############################################
 subroutine run_SCF
-  use module_data, only     : MaxSCF
+  use module_data, only     : MaxSCF, Damp
   use module_energy, only   : Eold,calc_Energy,Etot
   implicit none
   integer                  :: iSCF
@@ -33,6 +33,9 @@ subroutine run_SCF
 
     dE = Etot - Eold     
 
+    !  iSCF   Etot  dE   Drmsd
+    write(*,'("SCF  ",I5,"  ",3(F18.10,"  "),F5.2)') iSCF, Etot, dE, Drmsd, Damp
+
     call check_Conv()
 
     if(SCFconv) exit
@@ -52,18 +55,17 @@ subroutine guess()
   implicit none
   integer                   :: i
 
-  write(*,*) ""
-  write(*,*) "    Initial guess..."
-  write(*,*) ""
+!  write(*,*) ""
+!  write(*,*) "    Initial guess..."
+!  write(*,*) ""
 
   do i=1,Spins
     Fock(:,:,i) = Hcore(:,:)
     ! add random perturbation
   enddo
 
-  call print_Mat(Hcore(:,:),dim_1e,5,"Hcore")
-
-  call print_Mat(Fock(:,:,1),dim_1e,4,"Fock")
+!  call print_Mat(Hcore(:,:),dim_1e,5,"Hcore")
+!  call print_Mat(Fock(:,:,1),dim_1e,4,"Fock")
 
 end subroutine guess
 
@@ -73,6 +75,7 @@ end subroutine guess
 !#############################################
 subroutine calc_Fock()
   use module_data, only      : Dens,Fock,Spins,dim_1e,ERI,Hcore
+  use module_data, only      : DoDamp, Damp
   use module_io, only        : print_Mat
   implicit none
   integer                         :: iSpin,i,j,k,l
@@ -80,9 +83,9 @@ subroutine calc_Fock()
   integer                         :: ik,jl,ikjl
   double precision, allocatable   :: Fockold(:,:,:)
 
-  write(*,*) ""
-  write(*,*) "    Build new Fock..."
-  write(*,*) ""
+!  write(*,*) ""
+!  write(*,*) "    Build new Fock..."
+!  write(*,*) ""
 
   allocate(Fockold(dim_1e,dim_1e,Spins))
 
@@ -126,9 +129,13 @@ subroutine calc_Fock()
     enddo
   enddo
 
-  ! add damping
+  ! Damping    
+  if(DoDamp)then
+    Fock = Damp*Fock + (1.0d0-Damp)*Fockold
+  endif
+
   do iSpin=1,Spins
-    call print_Mat(Fock(:,:,iSpin),dim_1e,4,"Fock")
+!    call print_Mat(Fock(:,:,iSpin),dim_1e,4,"Fock")
   enddo
 
   deallocate(Fockold)
@@ -151,9 +158,9 @@ subroutine calc_Dens()
   Drmsd = 0.0d0
   Densold = Dens
 
-  write(*,*) ""
-  write(*,*) "    Calc density matrix"
-  write(*,*) ""
+!  write(*,*) ""
+!  write(*,*) "    Calc density matrix"
+!  write(*,*) ""
 
   do i=1,dim_1e
     do j=1,i
@@ -165,7 +172,7 @@ subroutine calc_Dens()
       Drmsd = Drmsd + (Dens(i,j,1)-Densold(i,j,1))**2
     enddo
   enddo
-  call print_Mat(Dens(:,:,1),dim_1e,5,"DensA")
+!  call print_Mat(Dens(:,:,1),dim_1e,5,"DensA")
 
   
   if(Spins==2)then
@@ -179,7 +186,7 @@ subroutine calc_Dens()
         Drmsd = Drmsd + (Dens(i,j,2)-Densold(i,j,2))**2
       enddo
     enddo
-    call print_Mat(Dens(:,:,2),dim_1e,5,"DensB")
+!    call print_Mat(Dens(:,:,2),dim_1e,5,"DensB")
   endif
 
   Drmsd = sqrt(Drmsd/dble(dim_1e*dim_1e*Spins))
@@ -199,9 +206,9 @@ subroutine ort_fock()
   integer                         :: i
   double precision, allocatable   :: temp(:,:)
 
-  write(*,*) ""
-  write(*,*) "    orthogonalizing Fock ..."
-  write(*,*) ""
+!  write(*,*) ""
+!  write(*,*) "    orthogonalizing Fock ..."
+!  write(*,*) ""
 
   allocate(temp(dim_1e,dim_1e))
 
@@ -215,7 +222,7 @@ subroutine ort_fock()
                 S12(1:dim_1e,1:dim_1e),dim_1e,      &
                 temp(1:dim_1e,1:dim_1e),dim_1e,     &
                 0.0d0,Coef(1:dim_1e,1:dim_1e,i),dim_1e)
-    call print_Mat(Coef(:,:,i),dim_1e,8,"ort Fock")
+!    call print_Mat(Coef(:,:,i),dim_1e,8,"ort Fock")
   enddo
 
 
@@ -234,9 +241,9 @@ subroutine deort_fock()
   integer                         :: i
   double precision, allocatable   :: temp(:,:)
 
-  write(*,*) ""
-  write(*,*) "    deorthogonalizing Fock ..."
-  write(*,*) ""
+!  write(*,*) ""
+!  write(*,*) "    deorthogonalizing Fock ..."
+!  write(*,*) ""
 
   allocate(temp(dim_1e,dim_1e))
 
@@ -247,7 +254,7 @@ subroutine deort_fock()
                 S12(1:dim_1e,1:dim_1e),dim_1e,      &
                 temp(1:dim_1e,1:dim_1e),dim_1e,   &
                 0.0d0,Coef(1:dim_1e,1:dim_1e,i),dim_1e)
-    call print_Mat(Coef(:,:,i),dim_1e,8,"deort WF")
+!    call print_Mat(Coef(:,:,i),dim_1e,8,"deort WF")
   enddo
 
   deallocate(temp)
@@ -269,17 +276,17 @@ subroutine dia_fock()
   lwork = dim_1e*(3+dim_1e/2)
   allocate(work(lwork))
 
-  write(*,*) ""
-  write(*,*) "    Diagonalizing..."
-  write(*,*) ""
+!  write(*,*) ""
+!  write(*,*) "    Diagonalizing..."
+!  write(*,*) ""
 
   do i=1,Spins
     call dsyev('V','U',dim_1e,Coef(1:dim_1e,1:dim_1e,i),dim_1e,Eps(1:dim_1e,i),work,lwork,inf)
-    call print_Mat(Coef(:,:,i),dim_1e,6,"ort WF")
+!    call print_Mat(Coef(:,:,i),dim_1e,6,"ort WF")
   enddo
 
   do i=1,Spins
-    call print_Vec(Eps(:,i),dim_1e,11,"Eigenvalues")
+!    call print_Vec(Eps(:,i),dim_1e,11,"Eigenvalues")
   enddo
 
   deallocate(work)
@@ -306,16 +313,14 @@ subroutine dia_S()
            S_val(dim_1e),         &
            temp(dim_1e,dim_1e))
 
-  write(*,*) ""
-  write(*,*) "    Diagonalizing S..."
-  write(*,*) ""
+!  write(*,*) ""
+!  write(*,*) "    Diagonalizing S..."
+!  write(*,*) ""
 
   S_vec = Sij
   call dsyev('V','U',dim_1e,S_vec(1:dim_1e,1:dim_1e),dim_1e,S_val(1:dim_1e),work,lwork,inf)
 
-  do i=1,dim_1e
-    write(*,*) S_val(i)
-  enddo
+!  call print_Vec(S_val(:),dim_1e,11,"Ovrlpvalues")
 
   deallocate(work)
 
@@ -347,9 +352,24 @@ end subroutine dia_S
 subroutine check_Conv()
   use module_data, only      : Econv 
   use module_data, only      : Dconv 
+  use module_data, only      : DoDamp, Damp
   implicit none
 
-  if (Drmsd<Dconv .and. dE<Econv) then
+  if(abs(dE) < 1.0d-2 .and. Damp /= 1.0d0  & 
+                      .and. Damp /= 0.7d0  &
+                      .and. DoDamp)then
+    Damp = 0.7d0
+    write(*,*) "    Damping set to 0.7"
+  endif
+
+  if(abs(dE) < 1.0d-5 .and. Damp /= 1.0d0  & 
+                      .and. DoDamp)then
+    Damp = 1.0d0
+    DoDamp =.false.
+    write(*,*) "    Damping turned off"
+  endif
+
+  if(Drmsd<Dconv .and. abs(dE)<Econv)then
     write(*,*) "SCF converged"
     SCFconv = .true.
   endif

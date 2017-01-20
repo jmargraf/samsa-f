@@ -6,6 +6,7 @@ program samsa
   use module_energy, only : calc_Enuc
   use module_ints,   only : calc_Ints
   use module_scf,    only : guess,dia_S,run_SCF
+  use module_props,  only : print_Eigen
   implicit none
 
 ! read input and calculate dimensions
@@ -40,6 +41,7 @@ program samsa
   call run_SCF()
 
 ! run properties
+  call print_Eigen()
 
 ! run post-scf
 

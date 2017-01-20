@@ -22,7 +22,7 @@ subroutine print_Mat(Mat,n,nname,MatName)
 
   do i=1,n
     do j=1,n
-      write(*,'(" ",F10.5," ")',advance="no") Mat(i,j)
+      write(*,'(" ",F12.5," ")',advance="no") Mat(i,j)
 !      write(*,*)  Mat(i,j)
     enddo
     write(*,*) ""
@@ -48,7 +48,7 @@ subroutine print_Vec(Vec,n,nname,VecName)
   write(*,*) ""
 
   do i=1,n
-    write(*,'(" ",F10.5," ")',advance="no") Vec(i)
+    write(*,'(I5," ",F12.5," ")',advance="no") i,Vec(i)
     if(i==noccA) write(*,'(A)',advance="no") " HOMO"
     write(*,*) ""
   enddo
@@ -74,7 +74,7 @@ subroutine print_SVec(Vec,n,nname,VecName)
 
   do i=1,n
     do j=1,2
-      write(*,'(" ",F10.5," ")',advance="no") Vec(i,j)
+      write(*,'(I5," ",F12.5," ")',advance="no") i,Vec(i,j)
     enddo
     if(i==noccA) write(*,'(A)',advance="no") " SOMOa"
     if(i==noccB) write(*,'(A)',advance="no") " SOMOb"

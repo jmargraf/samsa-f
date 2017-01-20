@@ -175,6 +175,34 @@ subroutine dimensions()
         dim_1e = dim_1e + 9
       endif
     enddo
+  elseif(basis_set == "svp")then
+    do i=1,natoms
+      if((atom(i) == "H"))then
+        dim_1e = dim_1e + 2
+      elseif((atom(i) == "He"))then
+        dim_1e = dim_1e + 5
+      elseif((atom(i) == "Li") .or. &
+             (atom(i) == "Be"))then
+        dim_1e = dim_1e + 9
+      elseif((atom(i) == "B")  .or. &
+             (atom(i) == "C")  .or. &
+             (atom(i) == "N")  .or. &
+             (atom(i) == "O")  .or. &
+             (atom(i) == "F")  .or. &
+             (atom(i) == "Ne"))then
+        dim_1e = dim_1e + 14
+      elseif((atom(i) == "Na"))then  
+        dim_1e = dim_1e + 15
+      elseif((atom(i) == "Mg") .or. &
+             (atom(i) == "Al") .or. &
+             (atom(i) == "Si") .or. &
+             (atom(i) == "P")  .or. &
+             (atom(i) == "S")  .or. &
+             (atom(i) == "Cl") .or. &
+             (atom(i) == "Ar"))then
+        dim_1e = dim_1e + 18
+      endif
+    enddo    
   endif 
 
 ! Dimension of 2e Matrices
@@ -205,6 +233,7 @@ subroutine dimensions()
   do i=1,natoms
     call  coreq(atom(i),Z)
     nel = nel + Z
+    write(*,*) atom(i),Z
   enddo
   nel = nel - charge
 
@@ -214,7 +243,7 @@ subroutine dimensions()
       noccA = nel/2 + (mult-1)/2
       noccB = nel/2 - (mult-1)/2
     else
-      write(*,*) "  !Error! RHF calc impossible with even no of electrons "
+      write(*,*) "  !Error! RHF calc impossible with odd no of electrons "
       call exit(666)
     endif
   elseif(spins == 2)then
@@ -299,6 +328,17 @@ subroutine parse_option(argument)
     if(uargument(7:10)=='CORE')then
       guess = "core"
       write(*,*) '    GUESS=CORE'
+    else
+      write(*,*) "    Unknown Argument :", uargument
+    endif
+
+  elseif(uargument(1:6)=='BASIS=')then
+    if(uargument(7:10)=='MIN')then
+      basis_set = "min"
+      write(*,*) '    BASIS=MIN'
+    elseif(uargument(7:10)=='SVP')then
+      basis_set = "svp"
+      write(*,*) '    BASIS=SVP'
     else
       write(*,*) "    Unknown Argument :", uargument
     endif

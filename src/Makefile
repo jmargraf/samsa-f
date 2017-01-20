@@ -2,8 +2,8 @@ COMP = gfortran
 #COMP = ifort 
 FLAGS = 
 #BLASLIB = -lblas
-MKLLIB = -lblas -llapack
-#MKLLIB = ${MKLROOT}/lib/intel64/libmkl_blas95_lp64.a ${MKLROOT}/lib/intel64/libmkl_lapack95_lp64.a -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_sequential.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl
+#MKLLIB = -lblas -llapack
+MKLLIB = ${MKLROOT}/lib/intel64/libmkl_blas95_lp64.a ${MKLROOT}/lib/intel64/libmkl_lapack95_lp64.a -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_sequential.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl
 
 ../bin/samsa.x : constants.o io.o data.o ints.o energy.o scf.o props.o samsa.o
 	${COMP} ${FLAGS} constants.o io.o data.o ints.o energy.o scf.o props.o samsa.o ${MKLLIB} -o ../bin/samsa.x

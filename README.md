@@ -12,4 +12,9 @@ DCONV=<real>
 DAMP=<real>
 DODAMP=[on,off]
 GUESS=[core]
+BASIS=[min,svp]
+
+
+min -> STO-3G
+svp -> def2-SV(P)
 

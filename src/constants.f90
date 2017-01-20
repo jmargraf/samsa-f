@@ -13,7 +13,7 @@ contains
 !#############################################
 subroutine coreq(El,Q)
   implicit none
-  character, intent(in)                       :: El
+  character(len=2), intent(in)                :: El
   integer, intent(out)                        :: Q
 
   if(El == 'H')then

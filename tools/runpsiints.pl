@@ -68,7 +68,7 @@ sub RunPsi{
   if($basis_set eq "min"){
     print PSI "  basis sto-3g \n";
   }elsif($basis_set eq "svp"){
-    print PSI "  basis def2-SVP \n";
+    print PSI "  basis def2-SV(P) \n";
   }elsif($basis_set eq "po2"){
     print PSI "  basis 6-311G** \n";
   }elsif($basis_set eq "tzp"){

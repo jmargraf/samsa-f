@@ -5,7 +5,7 @@ program samsa
   use module_data,   only : allocate_SCFmat 
   use module_energy, only : calc_Enuc
   use module_ints,   only : calc_Ints
-  use module_scf,    only : guess,dia_S,run_SCF
+  use module_scf,    only : do_guess,dia_S,run_SCF
   use module_props,  only : print_Eigen
   implicit none
 
@@ -35,7 +35,7 @@ program samsa
   call dia_S() 
   
 ! initial guess
-  call guess()
+  call do_guess()
 
 ! run scf
   call run_SCF()

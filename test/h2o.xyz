@@ -1,5 +1,5 @@
 3
-charge=0 mult=1 calc=rhf basis=svp
+charge=0 mult=1 calc=rhf basis=min
 O          0.00000        0.00000        0.00000
 H          0.00000        0.00000        0.95691
 H          0.92636        0.00000       -0.23987

@@ -54,9 +54,10 @@ end subroutine run_SCF
 !#############################################
 !#              Initial Guess       
 !#############################################
-subroutine guess()
-  use module_data, only      : Fock,Hcore,Spins,dim_1e
-  use module_io, only        : print_Mat
+subroutine do_guess()
+  use module_data,      only : Fock,Hcore,Spins,dim_1e
+  use module_data,      only : guess
+  use module_io,        only : print_Mat
   implicit none
   integer                   :: i
 
@@ -64,15 +65,97 @@ subroutine guess()
 !  write(*,*) "    Initial guess..."
 !  write(*,*) ""
 
-  do i=1,Spins
-    Fock(:,:,i) = Hcore(:,:)
-    ! add random perturbation
+  write(*,*) "guess = ", guess
+
+  if(guess == "core")then
+    write(*,*) ""
+    write(*,*) "    Initial guess..."
+    write(*,*) ""
+    do i=1,Spins
+      Fock(:,:,i) = Hcore(:,:)
+      ! add random perturbation
+    enddo
+  elseif(Guess == "huck")then
+    call guess_huckel()
+  endif
+
+!  call print_Mat(Hcore(:,:),dim_1e,5,"Hcore")
+!  call print_Mat(Fock(:,:,1),dim_1e,4,"Fock")
+
+end subroutine do_guess
+
+
+!#############################################
+!#               Hückel Guess       
+!#############################################
+subroutine guess_huckel()
+  use module_data,          only : Fock,Hcore,Spins,dim_1e,Sij
+  use module_data,          only : Guess,atom,Bastype,Basis
+  use module_io,            only : print_Mat
+  use module_constants,     only : CoreQ,eV2Ha
+  implicit none
+  integer                       :: iSpin,i,j,Zi,Zj
+  double precision              :: K = 1.75d0
+!  double precision              :: Hij
+  double precision              :: Par_ii(8,3)
+
+  write(*,*) ""
+  write(*,*) "      Extended Hückel..."
+  write(*,*) ""
+
+!  allocate(Hii(dim_1e))
+  Par_ii(1,1) = -13.06d0
+  Par_ii(1,2) = 0.0d0
+  Par_ii(1,3) = 0.0d0
+  Par_ii(2,1) = -23.836940d0
+  Par_ii(2,2) = 0.0d0
+  Par_ii(2,3) = 0.0d0
+  Par_ii(3,1) = -64.465135d0
+  Par_ii(3,2) = -5.41d0
+  Par_ii(3,3) = -3.61d0
+  Par_ii(4,1) = -122.009435d0
+  Par_ii(4,2) = -9.33d0
+  Par_ii(4,3) = -5.88d0
+  Par_ii(5,1) = -197.703359d0
+  Par_ii(5,2) = -14.0d0
+  Par_ii(5,3) = -8.24d0
+  Par_ii(6,1) = -297.452179d0
+  Par_ii(6,2) = -19.42d0
+  Par_ii(6,3) = -10.7d0
+  Par_ii(7,1) = -417.519956d0
+  Par_ii(7,2) = -25.58d0
+  Par_ii(7,3) = -13.25d0
+  Par_ii(8,1) = -552.668469d0
+  Par_ii(8,2) = -32.49d0
+  Par_ii(8,3) = -15.88d0
+
+  Par_ii = Par_ii*ev2Ha
+
+  do iSpin=1,Spins
+    do i=1,dim_1e
+      do j=1,dim_1e
+!        Fock(i,j,iSpin) = Hcore(i,j)
+        Fock(i,j,iSpin) = 0.0d0
+        call CoreQ(atom(Basis(i)),Zi)
+        call CoreQ(atom(Basis(j)),Zj)
+
+!        if(Bastype(i) > 1 .and. Bastype(j) > 1) then
+!          Fock(i,j,iSpin)  = K * Sij(i,j)    &
+!                           * (Par_ii(Zi,Bastype(i)) + Par_ii(Zj,Bastype(j)))/2.0d0
+!        endif
+        if(i == j) then
+          Fock(i,j,iSpin)  = K * Sij(i,j)    &
+                           * (Par_ii(Zi,Bastype(i)) + Par_ii(Zj,Bastype(j)))/2.0d0
+        endif
+      enddo
+    enddo
   enddo
 
 !  call print_Mat(Hcore(:,:),dim_1e,5,"Hcore")
 !  call print_Mat(Fock(:,:,1),dim_1e,4,"Fock")
 
-end subroutine guess
+end subroutine guess_huckel
+
 
 
 !#############################################
@@ -80,13 +163,14 @@ end subroutine guess
 !#############################################
 subroutine calc_Fock()
   use module_data, only      : Dens,Fock,Spins,dim_1e,ERI,Hcore
-  use module_data, only      : DoDamp, Damp
+  use module_data, only      : DoDamp, Damp,Sij,Par,Bastype
   use module_io, only        : print_Mat
   implicit none
   integer                         :: iSpin,i,j,k,l
   integer                         :: ij,kl,ijkl
   integer                         :: ik,jl,ikjl
   double precision, allocatable   :: Fockold(:,:,:)
+  double precision                :: ScaleFactor=1.0d0
 
 !  write(*,*) ""
 !  write(*,*) "    Build new Fock..."
@@ -116,17 +200,23 @@ subroutine calc_Fock()
           ikjl = ik*(ik+1)/2 + jl +1
           if(kl>ij) ijkl = kl*(kl+1)/2 + ij +1
           if(jl>ik) ikjl = jl*(jl+1)/2 + ik +1
+
+          ScaleFactor = 1.0d0 - ((Par(Bastype(i+1))+Par(Bastype(i+1)))/2.0d0)*Sij(i+1,j+1)
+
           !UHF
           if(Spins==2)then
             do iSpin=1,Spins
-              Fock(i+1,j+1,iSpin) = Fock(i+1,j+1,iSpin)        &
-                                  + Dens(k+1,l+1,1)*ERI(ijkl)  &
-                                  + Dens(k+1,l+1,2)*ERI(ijkl)  &
-                                  - Dens(k+1,l+1,iSpin)*ERI(ikjl)                                                         
+              Fock(i+1,j+1,iSpin) = Fock(i+1,j+1,iSpin)            &
+                                  +(Dens(k+1,l+1,1)*ERI(ijkl)      &
+                                  + Dens(k+1,l+1,2)*ERI(ijkl)      &
+                                  - Dens(k+1,l+1,iSpin)*ERI(ikjl)) &
+                                  * ScaleFactor
             enddo
+          !RHF
           elseif(Spins==1)then
-            Fock(i+1,j+1,1)       = Fock(i+1,j+1,1)        &
-                                  + Dens(k+1,l+1,1)*(2.0d0*ERI(ijkl) - ERI(ikjl))
+            Fock(i+1,j+1,1)       = Fock(i+1,j+1,1)                                 &
+                                  +(Dens(k+1,l+1,1)*(2.0d0*ERI(ijkl) - ERI(ikjl)))  &
+                                  * ScaleFactor
           endif
         enddo
       enddo
@@ -355,9 +445,10 @@ end subroutine dia_S
 !#             Check Convergence       
 !#############################################
 subroutine check_Conv()
-  use module_data, only      : Econv 
-  use module_data, only      : Dconv 
-  use module_data, only      : DoDamp, Damp
+  use module_data,      only : Econv 
+  use module_data,      only : Dconv 
+  use module_data,      only : DoDamp, Damp
+  use module_energy,    only : Eelec, Etot
   implicit none
 
   if(abs(dE) < 1.0d-2 .and. Damp /= 1.0d0  & 
@@ -378,6 +469,8 @@ subroutine check_Conv()
     write(*,*) " "
     write(*,*) "    SCF converged (hurra)!"
     write(*,*) " "
+    write(*,*) "         Eelec=",Eelec
+    write(*,*) "    Final Etot=",Etot
 
     SCFconv = .true.
   endif

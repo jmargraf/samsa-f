@@ -12,18 +12,21 @@ contains
 !#            Calculate Integrals
 !#############################################
 subroutine calc_Ints()
-  use module_data, only      : mol_name,basis_set,dim_1e
+  use module_data,      only : mol_name,basis_set,dim_1e
   implicit none
   character(len=1024)       :: command 
+  character(len=1024)       :: dir
 
   write(*,*) ""
   write(*,*) "  Running Psi4 integral package ..."
   write(*,*) ""
 
-  write(command,*) "perl ../tools/runpsiints.pl " , &
-                               trim(mol_name)," " , &
-                               trim(basis_set)," ", &  
-                               dim_1e
+  call get_environment_variable("SAMSA_DIR",dir)
+ 
+  write(command,*) "perl ",trim(dir),"/tools/runpsiints.pl " , &
+                           trim(mol_name)," "                , &
+                           trim(basis_set)," "               , &  
+                           dim_1e
 
   write(*,*) "    ",trim(command)
   write(*,*) ""

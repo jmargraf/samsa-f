@@ -12,8 +12,9 @@ module module_data
   double precision, allocatable                 :: rAB(:,:)
 
 ! Basis set details
-  integer, allocatable                          :: basis(:)
-  character(len=3), allocatable                 :: bastyp(:)
+  integer, allocatable                          :: Basis(:)
+!  character(len=3), allocatable                 :: bastype(:)
+  integer, allocatable                          :: Bastype(:)
   character(len=3)                              :: basis_set = "min"
 
 ! SCF options
@@ -26,7 +27,8 @@ module module_data
   double precision                              :: Dconv = 1.0d-9
   double precision                              :: Damp = 0.5d0
   logical                                       :: DoDamp = .true.
-  character                                     :: guess = "core"
+  character(len=4)                              :: guess = "core"
+  double precision                              :: Par(3) = 0.0d0
 
 ! SCF matrices
   double precision, allocatable                 :: Fock(:,:,:)  
@@ -146,10 +148,12 @@ subroutine dimensions()
   integer                  :: i,j,k,l
   integer                  :: ij,kl,ijkl
   logical                  :: even = .true.
-  integer                  :: Z
+  integer                  :: Z,iBas
 
 ! Dimension of 1e Matrices
   dim_1e = 0
+
+  iBas = 0
 
   if(basis_set == "min")then
     do i=1,natoms
@@ -205,6 +209,9 @@ subroutine dimensions()
     enddo    
   endif 
 
+  allocate(bastype(dim_1e),basis(dim_1e))
+  call basis_types()
+
 ! Dimension of 2e Matrices
   dim_2e = 0
   do i=0,(dim_1e-1)
@@ -233,9 +240,10 @@ subroutine dimensions()
   do i=1,natoms
     call  coreq(atom(i),Z)
     nel = nel + Z
-    write(*,*) atom(i),Z
   enddo
+  write(*,*) "nel= ",nel
   nel = nel - charge
+  write(*,*) "nel= ",nel  
 
   if(spins == 1)then
     if(mod(nel,2) == 0)then
@@ -272,6 +280,87 @@ subroutine dimensions()
   write(*,*) ""
 
 end subroutine dimensions
+
+!#############################################
+!#                Basis Types    
+!#############################################
+subroutine basis_types()
+  implicit none
+  integer                  :: i,iBas
+
+  iBas = 0
+  if(basis_set == "min")then
+    do i=1,natoms
+      if((atom(i) == "H") .or. (atom(i) == "He"))then
+        iBas = iBas + 1
+        Bastype(iBas) = 1
+        Basis(iBas) = i
+      elseif((atom(i) == "Li") .or. &
+             (atom(i) == "Be") .or. &
+             (atom(i) == "B")  .or. &
+             (atom(i) == "C")  .or. &
+             (atom(i) == "N")  .or. &
+             (atom(i) == "O")  .or. &
+             (atom(i) == "F")  .or. &
+             (atom(i) == "Ne"))then
+        iBas = iBas + 1
+        Bastype(iBas) = 1
+        Basis(iBas) = i
+        iBas = iBas + 1
+        Bastype(iBas) = 2
+        Basis(iBas) = i
+        iBas = iBas + 1
+        Bastype(iBas) = 3
+        Basis(iBas) = i
+        iBas = iBas + 1
+        Bastype(iBas) = 3
+        Basis(iBas) = i
+        iBas = iBas + 1
+        Bastype(iBas) = 3
+        Basis(iBas) = i
+      elseif((atom(i) == "Na") .or. &
+             (atom(i) == "Mg") .or. &
+             (atom(i) == "Al") .or. &
+             (atom(i) == "Si") .or. &
+             (atom(i) == "P")  .or. &
+             (atom(i) == "S")  .or. &
+             (atom(i) == "Cl") .or. &
+             (atom(i) == "Ar"))then
+!       Nothing
+      endif
+    enddo
+  elseif(basis_set == "svp")then
+    do i=1,natoms
+      if((atom(i) == "H"))then
+!       Nothing
+      elseif((atom(i) == "He"))then
+!       Nothing
+      elseif((atom(i) == "Li") .or. &
+             (atom(i) == "Be"))then
+!       Nothing
+      elseif((atom(i) == "B")  .or. &
+             (atom(i) == "C")  .or. &
+             (atom(i) == "N")  .or. &
+             (atom(i) == "O")  .or. &
+             (atom(i) == "F")  .or. &
+             (atom(i) == "Ne"))then
+!       Nothing
+      elseif((atom(i) == "Na"))then
+!       Nothing
+      elseif((atom(i) == "Mg") .or. &
+             (atom(i) == "Al") .or. &
+             (atom(i) == "Si") .or. &
+             (atom(i) == "P")  .or. &
+             (atom(i) == "S")  .or. &
+             (atom(i) == "Cl") .or. &
+             (atom(i) == "Ar"))then
+!       Nothing
+      endif
+    enddo
+  endif
+
+end subroutine basis_types
+
 
 
 !#############################################
@@ -328,6 +417,9 @@ subroutine parse_option(argument)
     if(uargument(7:10)=='CORE')then
       guess = "core"
       write(*,*) '    GUESS=CORE'
+    elseif(uargument(7:12)=='HUCKEL')then
+      guess = "huck"
+      write(*,*) '    GUESS=HUCK'
     else
       write(*,*) "    Unknown Argument :", uargument
     endif
@@ -342,6 +434,18 @@ subroutine parse_option(argument)
     else
       write(*,*) "    Unknown Argument :", uargument
     endif
+
+  elseif(uargument(1:5)=='PAR1=')then
+    read(UArgument(6:),*) Par(1)
+    write(*,*) '    PAR1=',Par(1)
+
+  elseif(uargument(1:5)=='PAR2=')then
+    read(UArgument(6:),*) Par(2)
+    write(*,*) '    PAR2=',Par(2)
+
+  elseif(uargument(1:5)=='PAR3=')then
+    read(UArgument(6:),*) Par(3)
+    write(*,*) '    PAR3=',Par(3)
 
   else
     write(*,*) "    Unknown Argument :", uargument

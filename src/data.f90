@@ -29,6 +29,7 @@ module module_data
   logical                                       :: DoDamp = .true.
   character(len=4)                              :: guess = "core"
   double precision                              :: Par(3) = 0.0d0
+  integer                                       :: scaletype = 1
 
 ! SCF matrices
   double precision, allocatable                 :: Fock(:,:,:)  
@@ -446,6 +447,11 @@ subroutine parse_option(argument)
   elseif(uargument(1:5)=='PAR3=')then
     read(UArgument(6:),*) Par(3)
     write(*,*) '    PAR3=',Par(3)
+
+  elseif(uargument(1:5)=='SCAL=')then
+    read(UArgument(6:),*) scaletype
+    write(*,*) '    SCAL=',scaletype
+
 
   else
     write(*,*) "    Unknown Argument :", uargument

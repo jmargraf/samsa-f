@@ -13,7 +13,7 @@ contains
 !#############################################
 subroutine run_SCF
   use module_data, only     : MaxSCF, Damp
-  use module_energy, only   : Eold,calc_Energy,Etot
+  use module_energy, only   : Eold,calc_Energy,Etot,Eelec
   implicit none
   integer                  :: iSCF
 
@@ -48,6 +48,9 @@ subroutine run_SCF
     call calc_Fock()
 
   enddo
+
+  write(*,*) "         Eelec=",Eelec
+  write(*,*) "    Final Etot=",Etot
 
 end subroutine run_SCF
 
@@ -163,7 +166,7 @@ end subroutine guess_huckel
 !#############################################
 subroutine calc_Fock()
   use module_data, only      : Dens,Fock,Spins,dim_1e,ERI,Hcore
-  use module_data, only      : DoDamp, Damp,Sij,Par,Bastype
+  use module_data, only      : DoDamp, Damp,Sij,Par,Bastype,scaletype
   use module_io, only        : print_Mat
   implicit none
   integer                         :: iSpin,i,j,k,l
@@ -201,7 +204,29 @@ subroutine calc_Fock()
           if(kl>ij) ijkl = kl*(kl+1)/2 + ij +1
           if(jl>ik) ikjl = jl*(jl+1)/2 + ik +1
 
-          ScaleFactor = 1.0d0 - ((Par(Bastype(i+1))+Par(Bastype(i+1)))/2.0d0)*Sij(i+1,j+1)
+          if(scaletype==1)then
+            ScaleFactor = 1.0d0 - ((Par(Bastype(i+1))+Par(Bastype(i+1)))/2.0d0)*Sij(i+1,j+1)
+          elseif(scaletype==2)then
+            ScaleFactor = 1.0d0 -                                               &
+                                  ((Par(Bastype(i+1))+Par(Bastype(i+1)))/2.0d0) &
+                                 *Sij(i+1,j+1) *Sij(i+1,k+1) *Sij(i+1,l+1)      &
+                                 *Sij(j+1,k+1) *Sij(j+1,l+1) *Sij(k+1,l+1)
+          elseif(scaletype==3)then
+            ScaleFactor = 1.0d0 -                                                  &
+                                  ((Par(Bastype(i+1))+Par(Bastype(i+1)))/2.0d0)    &
+                                 *(Sij(i+1,j+1) +Sij(i+1,k+1) +Sij(i+1,l+1)        &
+                                 + Sij(j+1,k+1) +Sij(j+1,l+1) +Sij(k+1,l+1))/6.0d0
+          elseif(scaletype==4)then
+            ScaleFactor = 1.0d0 -                                                &
+                                  ((Par(Bastype(i+1))+Par(Bastype(i+1)))/2.0d0)  &
+                              *abs(Sij(i+1,j+1) *Sij(i+1,k+1) *Sij(i+1,l+1)      &
+                                 * Sij(j+1,k+1) *Sij(j+1,l+1) *Sij(k+1,l+1))
+          elseif(scaletype==5)then
+            ScaleFactor = 1.0d0 -                                                 &
+                                  ((Par(Bastype(i+1))+Par(Bastype(i+1)))/2.0d0)   &
+                              *abs(Sij(i+1,j+1) *Sij(i+1,k+1) *Sij(i+1,l+1)       &
+                                  *Sij(j+1,k+1) *Sij(j+1,l+1) *Sij(k+1,l+1))**(1.0d0/6.0d0)
+          endif
 
           !UHF
           if(Spins==2)then
@@ -469,8 +494,8 @@ subroutine check_Conv()
     write(*,*) " "
     write(*,*) "    SCF converged (hurra)!"
     write(*,*) " "
-    write(*,*) "         Eelec=",Eelec
-    write(*,*) "    Final Etot=",Etot
+!    write(*,*) "         Eelec=",Eelec
+!    write(*,*) "    Final Etot=",Etot
 
     SCFconv = .true.
   endif

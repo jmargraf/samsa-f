@@ -28,7 +28,7 @@ module module_data
   double precision                              :: Damp = 0.5d0
   logical                                       :: DoDamp = .true.
   character(len=4)                              :: guess = "core"
-  double precision                              :: Par(3) = 0.0d0
+  double precision                              :: Par(4) = 0.0d0
   integer                                       :: scaletype = 1
 
 ! SCF matrices
@@ -296,6 +296,7 @@ subroutine basis_types()
         iBas = iBas + 1
         Bastype(iBas) = 1
         Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
       elseif((atom(i) == "Li") .or. &
              (atom(i) == "Be") .or. &
              (atom(i) == "B")  .or. &
@@ -307,18 +308,23 @@ subroutine basis_types()
         iBas = iBas + 1
         Bastype(iBas) = 1
         Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 2
         Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
       elseif((atom(i) == "Na") .or. &
              (atom(i) == "Mg") .or. &
              (atom(i) == "Al") .or. &
@@ -333,19 +339,139 @@ subroutine basis_types()
   elseif(basis_set == "svp")then
     do i=1,natoms
       if((atom(i) == "H"))then
-!       Nothing
+!       2 1S      
+        iBas = iBas + 1
+        Bastype(iBas) = 1
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 1
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
       elseif((atom(i) == "He"))then
-!       Nothing
+!       2 1S 1 2P
+        iBas = iBas + 1
+        Bastype(iBas) = 1
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 2
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 3
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 3
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 3
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
       elseif((atom(i) == "Li") .or. &
              (atom(i) == "Be"))then
-!       Nothing
+!       1 1S 2 2S 2 2P
+        iBas = iBas + 1
+        Bastype(iBas) = 1
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 2
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 2
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 3
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 3
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 3
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 3
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 3
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 3
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
       elseif((atom(i) == "B")  .or. &
              (atom(i) == "C")  .or. &
              (atom(i) == "N")  .or. &
              (atom(i) == "O")  .or. &
              (atom(i) == "F")  .or. &
              (atom(i) == "Ne"))then
-!       Nothing
+!       1 1S 2 2S 2 2P 1 3D
+        iBas = iBas + 1
+        Bastype(iBas) = 1
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 2
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 2
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 3
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 3
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 3
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 3
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 3
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 3
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 4
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 4
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 4
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 4
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        iBas = iBas + 1
+        Bastype(iBas) = 4
+        Basis(iBas) = i
+        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
       elseif((atom(i) == "Na"))then
 !       Nothing
       elseif((atom(i) == "Mg") .or. &
@@ -447,6 +573,10 @@ subroutine parse_option(argument)
   elseif(uargument(1:5)=='PAR3=')then
     read(UArgument(6:),*) Par(3)
     write(*,*) '    PAR3=',Par(3)
+
+  elseif(uargument(1:5)=='PAR4=')then
+    read(UArgument(6:),*) Par(4)
+    write(*,*) '    PAR4=',Par(4)
 
   elseif(uargument(1:5)=='SCAL=')then
     read(UArgument(6:),*) scaletype

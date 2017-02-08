@@ -43,7 +43,7 @@ subroutine run_SCF
 
     call check_Conv()
 
-    if(SCFconv) exit
+    if(SCFconv .or. (iSCF==MaxSCF-1) ) exit
 
     call calc_Fock()
 
@@ -174,6 +174,8 @@ subroutine calc_Fock()
   integer                         :: ik,jl,ikjl
   double precision, allocatable   :: Fockold(:,:,:)
   double precision                :: ScaleFactor=1.0d0
+  double precision                :: AddFactor=0.0d0
+  double precision                :: TempPar
 
 !  write(*,*) ""
 !  write(*,*) "    Build new Fock..."
@@ -204,28 +206,74 @@ subroutine calc_Fock()
           if(kl>ij) ijkl = kl*(kl+1)/2 + ij +1
           if(jl>ik) ikjl = jl*(jl+1)/2 + ik +1
 
+          ScaleFactor=1.0d0
+          AddFactor=0.0d0
+
           if(scaletype==1)then
-            ScaleFactor = 1.0d0 - ((Par(Bastype(i+1))+Par(Bastype(i+1)))/2.0d0)*Sij(i+1,j+1)
+!            ScaleFactor = 1.0d0 - ((Par(Bastype(i+1))+Par(Bastype(j+1)))/2.0d0)*Sij(i+1,j+1)
+            if(Bastype(i+1)==4 .or. Bastype(j+1)==4)then
+              TempPar = 0.0d0        
+            elseif(Bastype(i+1)==3 .or. Bastype(j+1)==3)then
+              TempPar = Par(3)
+            elseif(Bastype(i+1)==2 .or. Bastype(j+1)==2)then
+              TempPar = Par(2)
+            elseif(Bastype(i+1)==1 .or. Bastype(j+1)==1)then
+              TempPar = Par(1)
+            endif
+            ScaleFactor = 1.0d0 - (TempPar)*Sij(i+1,j+1)
+
           elseif(scaletype==2)then
             ScaleFactor = 1.0d0 -                                               &
-                                  ((Par(Bastype(i+1))+Par(Bastype(i+1)))/2.0d0) &
+                                  ((Par(Bastype(i+1))+Par(Bastype(j+1)))/2.0d0) &
                                  *Sij(i+1,j+1) *Sij(i+1,k+1) *Sij(i+1,l+1)      &
                                  *Sij(j+1,k+1) *Sij(j+1,l+1) *Sij(k+1,l+1)
           elseif(scaletype==3)then
             ScaleFactor = 1.0d0 -                                                  &
-                                  ((Par(Bastype(i+1))+Par(Bastype(i+1)))/2.0d0)    &
+                                  ((Par(Bastype(i+1))+Par(Bastype(j+1)))/2.0d0)    &
                                  *(Sij(i+1,j+1) +Sij(i+1,k+1) +Sij(i+1,l+1)        &
                                  + Sij(j+1,k+1) +Sij(j+1,l+1) +Sij(k+1,l+1))/6.0d0
           elseif(scaletype==4)then
             ScaleFactor = 1.0d0 -                                                &
-                                  ((Par(Bastype(i+1))+Par(Bastype(i+1)))/2.0d0)  &
+                                  ((Par(Bastype(i+1))+Par(Bastype(j+1)))/2.0d0)  &
                               *abs(Sij(i+1,j+1) *Sij(i+1,k+1) *Sij(i+1,l+1)      &
                                  * Sij(j+1,k+1) *Sij(j+1,l+1) *Sij(k+1,l+1))
           elseif(scaletype==5)then
             ScaleFactor = 1.0d0 -                                                 &
-                                  ((Par(Bastype(i+1))+Par(Bastype(i+1)))/2.0d0)   &
+                                  ((Par(Bastype(i+1))+Par(Bastype(j+1)))/2.0d0)   &
                               *abs(Sij(i+1,j+1) *Sij(i+1,k+1) *Sij(i+1,l+1)       &
                                   *Sij(j+1,k+1) *Sij(j+1,l+1) *Sij(k+1,l+1))**(1.0d0/6.0d0)
+          elseif(scaletype==6)then
+            do iSpin=1,Spins
+              ScaleFactor = 1.0d0 -                                                 &
+                                    ((Par(Bastype(i+1))+Par(Bastype(j+1)))/2.0d0)   &
+                                   *(Dens(i+1,j+1,iSpin) *Dens(i+1,k+1,iSpin)       &
+                                   * Dens(i+1,l+1,iSpin) *Dens(j+1,k+1,iSpin)       &
+                                   * Dens(j+1,l+1,iSpin) *Dens(k+1,l+1,iSpin))
+            enddo
+          elseif(scaletype==7)then
+            do iSpin=1,Spins
+              ScaleFactor = 1.0d0 -                                                 &
+                                    ((Par(Bastype(i+1))+Par(Bastype(j+1)))/2.0d0)   &
+                                   *(Dens(i+1,j+1,iSpin) *Dens(i+1,k+1,iSpin)       &
+                                   * Dens(i+1,l+1,iSpin) *Dens(j+1,k+1,iSpin)       & 
+                                   * Dens(j+1,l+1,iSpin) *Dens(k+1,l+1,iSpin))      &
+                                   *(Sij(i+1,j+1) *Sij(i+1,k+1) *Sij(i+1,l+1)       &
+                                   * Sij(j+1,k+1) *Sij(j+1,l+1) *Sij(k+1,l+1))
+            enddo
+!          elseif(scaletype==8)then
+!            ScaleFactor = 1.0d0 - (Par(1))*Sij(i+1,j+1)
+!            AddFactor   = Par(2)*Sij(i+1,j+1)*Sij(k+1,l+1) + Par(3)
+          elseif(scaletype==8)then
+            ScaleFactor = 1.0d0 - (((Par(Bastype(i+1))+Par(Bastype(j+1)))/2.0d0))*Sij(i+1,j+1)*Sij(k+1,l+1)
+!           AddFactor   = ((Par(Bastype(i+1))+Par(Bastype(i+1)))/2.0d0)*Sij(i+1,j+1)*Sij(k+1,l+1) 
+          elseif(scaletype==9)then
+!           AddFactor   =   (Par(1))*Sij(i+1,j+1)*Sij(k+1,l+1)
+!           AddFactor   =   ((Par(Bastype(i+1))+Par(Bastype(i+1)))/2.0d0)*Sij(i+1,j+1)*Sij(k+1,l+1) 
+!           write(*,*)  "",
+!           AddFactor   =   -sqrt(abs(Par(Bastype(i+1))*Par(Bastype(j+1))))*Sij(i+1,j+1)*Sij(k+1,l+1)
+!           AddFactor   = - Par(Bastype(i+1))*Par(Bastype(j+1))*Sij(i+1,j+1)*Sij(k+1,l+1)
+           AddFactor   = -1.0d0*(Par(Bastype(i+1))*Par(Bastype(j+1)))*Sij(i+1,j+1)
+
           endif
 
           !UHF
@@ -235,13 +283,13 @@ subroutine calc_Fock()
                                   +(Dens(k+1,l+1,1)*ERI(ijkl)      &
                                   + Dens(k+1,l+1,2)*ERI(ijkl)      &
                                   - Dens(k+1,l+1,iSpin)*ERI(ikjl)) &
-                                  * ScaleFactor
+                                  * ScaleFactor + AddFactor
             enddo
           !RHF
           elseif(Spins==1)then
             Fock(i+1,j+1,1)       = Fock(i+1,j+1,1)                                 &
                                   +(Dens(k+1,l+1,1)*(2.0d0*ERI(ijkl) - ERI(ikjl)))  &
-                                  * ScaleFactor
+                                  * ScaleFactor + AddFactor
           endif
         enddo
       enddo

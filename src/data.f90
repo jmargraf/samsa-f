@@ -1,7 +1,7 @@
 module module_data
   implicit none
 
-! Calcularion details
+! Calculation details
   character(len=1024)                           :: exe_path
   character(len=32)                             :: mol_name
   integer                                       :: natoms
@@ -27,6 +27,8 @@ module module_data
   double precision                              :: Dconv = 1.0d-9
   double precision                              :: Damp = 0.5d0
   logical                                       :: DoDamp = .true.
+  logical                                       :: DoMP2 = .false.
+  integer                                       :: Fract = 0 
   character(len=4)                              :: guess = "core"
   double precision                              :: Par(4) = 0.0d0
   integer                                       :: scaletype = 1
@@ -37,6 +39,7 @@ module module_data
   double precision, allocatable                 :: Dens(:,:,:)  
   double precision, allocatable                 :: Eps(:,:)           
   double precision, allocatable                 :: Hcore(:,:)       
+  double precision, allocatable                 :: Occ(:,:)
 
 ! Integrals
   double precision, allocatable                 :: Sij(:,:)         
@@ -148,8 +151,9 @@ end subroutine allocate_SCFmat
 !#############################################
 subroutine dimensions()
   use module_constants, only : coreq
+  use module_io,        only : print_SVec,print_Vec
   implicit none
-  integer                  :: i,j,k,l
+  integer                  :: i,j,k,l,iSpins
   integer                  :: ij,kl,ijkl
   logical                  :: even = .true.
   integer                  :: Z,iBas
@@ -245,9 +249,7 @@ subroutine dimensions()
     call  coreq(atom(i),Z)
     nel = nel + Z
   enddo
-  write(*,*) "nel= ",nel
   nel = nel - charge
-  write(*,*) "nel= ",nel  
 
   if(spins == 1)then
     if(mod(nel,2) == 0)then
@@ -276,6 +278,28 @@ subroutine dimensions()
         call exit(666)
       endif
     endif
+  endif
+
+  allocate(Occ(dim_1e,spins))
+  Occ = 0.0d0
+
+  do iSpins=1,spins
+    if(iSpins==1)then
+      do i=1,nOccA
+        Occ(i,iSpins) = 2.0d0 * 1.0d0/dble(spins)
+      enddo
+    endif
+    if(iSpins==2)then
+      do i=1,nOccB
+        Occ(i,iSpins) = 2.0d0 * 1.0d0/dble(spins)
+      enddo
+    endif
+  enddo
+
+  if(Spins==1)then
+    call print_Vec(Occ(:,1),dim_1e,18,"Occupation Numbers")
+  elseif(Spins==2)then
+    call print_SVec(Occ(:,:),dim_1e,18,"Occupation Numbers")
   endif
 
   write(*,*) "  No of electrons   = ", nel 
@@ -505,32 +529,32 @@ subroutine parse_option(argument)
 
   if(uargument(1:7)=='CHARGE=')then
     read(UArgument(8:),*) charge
-    write(*,*) '    CHARGE=', charge
+    write(*,*) '    CHARGE    = ', charge
 
   elseif(uargument(1:5)=='MULT=')then
     read(UArgument(6:),*) mult
-    write(*,*) '    MULT=', mult
+    write(*,*) '    MULT      = ', mult
 
   elseif(uargument(1:5)=='CALC=')then
     read(UArgument(6:),*) calctype
-    write(*,*) '    CALC=', calctype
+    write(*,*) '    CALC      = ', calctype
 
   elseif(uargument(1:7)=='MAXSCF=')then
     read(UArgument(8:),*) maxSCF
-    write(*,*) '    MAXSCF=', maxSCF
+    write(*,*) '    MAXSCF    = ', maxSCF
 
   elseif(uargument(1:6)=='ECONV=')then
     read(UArgument(7:),*) Econv
-    write(*,*) '    ECONV=', Econv
+    write(*,*) '    ECONV     = ', Econv
 
   elseif(uargument(1:6)=='DCONV=')then
     read(UArgument(7:),*) Dconv
-    write(*,*) '    DCONV=', Dconv
+    write(*,*) '    DCONV     = ', Dconv
 
   elseif(uargument(1:5)=='DAMP=')then
     read(UArgument(6:),*) DAMP
     DoDamp = .true.
-    write(*,*) '    DAMP=',DAMP
+    write(*,*) '    DAMP      = ',DAMP
 
   elseif(uargument(1:7)=='DODAMP=')then
     if(uargument(8:9)=='ON')then
@@ -546,10 +570,10 @@ subroutine parse_option(argument)
   elseif(uargument(1:6)=='GUESS=')then
     if(uargument(7:10)=='CORE')then
       guess = "core"
-      write(*,*) '    GUESS=CORE'
+      write(*,*) '    GUESS     = CORE'
     elseif(uargument(7:12)=='HUCKEL')then
       guess = "huck"
-      write(*,*) '    GUESS=HUCK'
+      write(*,*) '    GUESS     = HUCK'
     else
       write(*,*) "    Unknown Argument :", uargument
     endif
@@ -557,34 +581,41 @@ subroutine parse_option(argument)
   elseif(uargument(1:6)=='BASIS=')then
     if(uargument(7:10)=='MIN')then
       basis_set = "min"
-      write(*,*) '    BASIS=MIN'
+      write(*,*) '    BASIS     = MIN'
     elseif(uargument(7:10)=='SVP')then
       basis_set = "svp"
-      write(*,*) '    BASIS=SVP'
+      write(*,*) '    BASIS     = SVP'
     else
       write(*,*) "    Unknown Argument :", uargument
     endif
 
   elseif(uargument(1:5)=='PAR1=')then
     read(UArgument(6:),*) Par(1)
-    write(*,*) '    PAR1=',Par(1)
+    write(*,*) '    PAR1      = ',Par(1)
 
   elseif(uargument(1:5)=='PAR2=')then
     read(UArgument(6:),*) Par(2)
-    write(*,*) '    PAR2=',Par(2)
+    write(*,*) '    PAR2      = ',Par(2)
 
   elseif(uargument(1:5)=='PAR3=')then
     read(UArgument(6:),*) Par(3)
-    write(*,*) '    PAR3=',Par(3)
+    write(*,*) '    PAR3      = ',Par(3)
 
   elseif(uargument(1:5)=='PAR4=')then
     read(UArgument(6:),*) Par(4)
-    write(*,*) '    PAR4=',Par(4)
+    write(*,*) '    PAR4      = ',Par(4)
 
   elseif(uargument(1:5)=='SCAL=')then
     read(UArgument(6:),*) scaletype
-    write(*,*) '    SCAL=',scaletype
+    write(*,*) '    SCAL      = ',scaletype
 
+  elseif(uargument(1:5)=='MBPT2')then
+    doMP2 = .true.
+    write(*,*) '    MBPT(2) '
+
+  elseif(uargument(1:6)=='FRACT=')then
+    read(UArgument(7:),*) Fract
+    write(*,*) '    FRACT     = ',Fract
 
   else
     write(*,*) "    Unknown Argument :", uargument

@@ -3,8 +3,9 @@ program samsa
   use module_data,   only : read_input
   use module_data,   only : dimensions
   use module_data,   only : allocate_SCFmat 
+  use module_data,   only : doMP2,Fract
   use module_energy, only : calc_Enuc,calc_Emp2
-  use module_ints,   only : calc_Ints
+  use module_ints,   only : calc_Ints,get_Occ
   use module_scf,    only : do_guess,dia_S,run_SCF
   use module_props,  only : print_Eigen
   use module_trans,  only : trans_full
@@ -29,6 +30,11 @@ program samsa
   call allocate_SCFmat()
   call calc_Enuc()
 
+! using fractional occupation numbers?
+  if(Fract==1)then
+    call get_Occ()
+  endif
+
 ! calc ints
   call calc_Ints()
 
@@ -44,9 +50,16 @@ program samsa
 ! run properties
   call print_Eigen()
 
+! using fractional occupation numbers in post-HF?
+  if(Fract==2)then
+    call get_Occ()
+  endif
+
 ! run post-scf
-  call trans_full()
-  call calc_Emp2()
+  if(doMP2)then
+    call trans_full()
+    call calc_Emp2()
+  endif
 
 end program samsa
 

@@ -14,12 +14,13 @@ contains
 !#            Calculate E_mp2
 !#############################################
 subroutine calc_Emp2
-  use module_data, only      : MOI,Spins,dim_1e,nOccA,nOccB,Eps,SMO
+  use module_data, only      : MOI,Spins,dim_1e,nOccA,nOccB,Eps,SMO,Occ
   use module_ints, only      : Index2e
   implicit none
   integer                   :: iSpin,i,j,a,b,ia,ja,jb,ib,iajb,ibja
   double precision          :: E_OS,E_SS,E_SSx,E_SSc
   double precision          :: E_AAx,E_AAc,E_BBx,E_BBc
+  double precision          :: occ_factor
 
   Emp2  = 0.0d0
   E_OS  = 0.0d0
@@ -152,6 +153,94 @@ subroutine calc_Emp2
 
   endif
 
+  if(spins==2)then
+    write(*,*) "    "
+    write(*,*) "    Calculating UHF-MBPT(2) correlation energy (nOcc version)"
+    write(*,*) "    "
+
+    Emp2  = 0.0d0
+    E_OS  = 0.0d0
+    E_SS  = 0.0d0
+    E_SSx = 0.0d0
+    E_SSc = 0.0d0
+    E_AAx = 0.0d0
+    E_AAc = 0.0d0
+    E_BBx = 0.0d0
+    E_BBc = 0.0d0
+
+    ! Opposite Spin 
+    do i=1,dim_1e*2-1,2
+      do a=1,dim_1e*2-1,2
+        do j=2,dim_1e*2,2
+          do b=2,dim_1e*2,2
+            occ_factor = dble(Occ((i+1)/2,1)*(1-Occ((a+1)/2,1))*Occ(j/2,2)*(1-Occ(b/2,2)))
+            if (occ_factor==0.0d0) cycle
+            E_OS  = E_OS  - (SMO(i,a,j,b)*SMO(i,a,j,b))*occ_factor/       &
+                            (Eps((a+1)/2,1)+Eps((b/2),2)                &
+                            -Eps((i+1)/2,1)-Eps((j/2),2))
+
+
+          enddo
+        enddo
+      enddo
+    enddo
+
+    ! Same Spin AA
+    do i=1,dim_1e*2-1,2
+      do a=1,dim_1e*2-1,2
+        do j=1,dim_1e*2-1,2
+          do b=1,dim_1e*2-1,2
+            occ_factor = dble(Occ((i+1)/2,1)*(1-Occ((a+1)/2,1))*Occ((j+1)/2,2)*(1-Occ((b+1)/2,2)))
+            if (occ_factor==0.0d0) cycle
+            E_AAc = E_AAc - (SMO(i,a,j,b)*SMO(i,a,j,b))*0.5d0*occ_factor/  &
+                            (Eps((a+1)/2,1)+Eps((b+1)/2,1)                 &
+                            -Eps((i+1)/2,1)-Eps((j+1)/2,1))
+
+
+            E_AAx = E_AAx + (SMO(i,a,j,b)*SMO(i,b,j,a))*0.5d0*occ_factor/  &
+                            (Eps((a+1)/2,1)+Eps((b+1)/2,1)                 &
+                            -Eps((i+1)/2,1)-Eps((j+1)/2,1))
+
+          enddo
+        enddo
+      enddo
+    enddo
+
+
+    ! Same Spin BB
+    do i=2,dim_1e*2,2
+      do a=2,dim_1e*2,2
+        do j=2,dim_1e*2,2
+          do b=2,dim_1e*2,2
+            occ_factor = dble(Occ(i/2,1)*(1-Occ(a/2,1))*Occ(j/2,2)*(1-Occ(b/2,2)))
+            if (occ_factor==0.0d0) cycle
+            E_BBc = E_BBc - (SMO(i,a,j,b)*SMO(i,a,j,b))*0.5d0*occ_factor/  &
+                            (Eps((a/2),2)+Eps((b/2),2)                     &
+                            -Eps((i/2),2)-Eps((j/2),2))
+
+
+            E_BBx = E_BBx + (SMO(i,a,j,b)*SMO(i,b,j,a))*0.5d0*occ_factor/  &
+                            (Eps((a/2),2)+Eps((b/2),2)                     &
+                            -Eps((i/2),2)-Eps((j/2),2))
+
+          enddo
+        enddo
+      enddo
+    enddo
+
+    Emp2 = E_OS + E_AAc + E_AAx + E_BBx + E_BBc
+
+    write(*,*) "    "
+    write(*,*) "      E_OS  = ", E_OS
+    write(*,*) "      E_AAx = ", E_AAx
+    write(*,*) "      E_AAc = ", E_AAc
+    write(*,*) "      E_BBx = ", E_BBx
+    write(*,*) "      E_BBc = ", E_BBc
+    write(*,*) "    "
+    write(*,*) "      Emp2  = ", Emp2
+    write(*,*) "    "
+
+  endif
 
 
 end subroutine calc_Emp2

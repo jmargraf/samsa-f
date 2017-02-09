@@ -210,4 +210,39 @@ subroutine Index2e(i,j,ij)
 
 end subroutine Index2e
 
+
+!#############################################
+!#     Get User Defined Occupation Numbers
+!#############################################
+subroutine get_Occ()
+  use module_data,        only : Occ,dim_1e
+  implicit none
+  integer                     :: i
+  character(len=8)            :: filename="occ_file"
+  double precision            :: nOcca,nOccb
+!  character(len=32)           :: scratch
+
+  write(*,*) ""
+  write(*,*) "     ... fetching user defined occupation numbers "
+  write(*,*) ""
+
+  open(90,file=trim(filename),status='old',action='read')
+
+!  do
+!    read(40,*) scratch
+!    if(trim(scratch) == "POTENTIAL") exit
+!  enddo
+
+  do i=1,dim_1e
+    read(90,*) nOcca,nOccb
+!      write(*,*) temp
+    Occ(i,1) = nOcca
+    Occ(i,2) = nOccb
+  enddo
+
+  close(90)
+
+end subroutine
+
+
 end module module_ints

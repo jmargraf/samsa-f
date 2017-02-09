@@ -316,7 +316,7 @@ end subroutine calc_Fock
 !#############################################
 subroutine calc_Dens()
   use module_data, only      : Dens,Coef,Spins,dim_1e
-  use module_data, only      : noccA,noccB
+  use module_data, only      : noccA,noccB,Occ
   use module_io, only        : print_Mat
   implicit none
   integer                         :: iSpin,i,j,k,l
@@ -330,32 +330,46 @@ subroutine calc_Dens()
 !  write(*,*) "    Calc density matrix"
 !  write(*,*) ""
 
-  do i=1,dim_1e
-    do j=1,i
-      Dens(i,j,1) = 0.0d0
-      do k=1,nOccA
-        Dens(i,j,1) = Dens(i,j,1) + Coef(i,k,1)*Coef(j,k,1)
-      enddo
-      Dens(j,i,1) = Dens(i,j,1)
-      Drmsd = Drmsd + (Dens(i,j,1)-Densold(i,j,1))**2
-    enddo
-  enddo
+!  do i=1,dim_1e
+!    do j=1,i
+!      Dens(i,j,1) = 0.0d0
+!      do k=1,nOccA
+!        Dens(i,j,1) = Dens(i,j,1) + Coef(i,k,1)*Coef(j,k,1)
+!      enddo
+!      Dens(j,i,1) = Dens(i,j,1)
+!      Drmsd = Drmsd + (Dens(i,j,1)-Densold(i,j,1))**2
+!    enddo
+!  enddo
 !  call print_Mat(Dens(:,:,1),dim_1e,5,"DensA")
 
   
-  if(Spins==2)then
+!  if(Spins==2)then
+!    do i=1,dim_1e
+!      do j=1,i
+!        Dens(i,j,2) = 0.0d0
+!        do k=1,nOccB
+!          Dens(i,j,2) = Dens(i,j,2) + Coef(i,k,2)*Coef(j,k,2)
+!        enddo
+!        Dens(j,i,2) = Dens(i,j,2)
+!        Drmsd = Drmsd + (Dens(i,j,2)-Densold(i,j,2))**2
+!      enddo
+!    enddo
+!    call print_Mat(Dens(:,:,2),dim_1e,5,"DensB")
+!  endif
+
+  do iSpin=1,Spins
     do i=1,dim_1e
       do j=1,i
-        Dens(i,j,2) = 0.0d0
-        do k=1,nOccB
-          Dens(i,j,2) = Dens(i,j,2) + Coef(i,k,2)*Coef(j,k,2)
+        Dens(i,j,iSpin) = 0.0d0
+        do k=1,dim_1e
+          Dens(i,j,iSpin) = Dens(i,j,iSpin) + Occ(k,iSpin)*Coef(i,k,iSpin)*Coef(j,k,iSpin)
         enddo
-        Dens(j,i,2) = Dens(i,j,2)
-        Drmsd = Drmsd + (Dens(i,j,2)-Densold(i,j,2))**2
+        Dens(j,i,iSpin) = Dens(i,j,iSpin)
+        Drmsd = Drmsd + (Dens(i,j,iSpin)-Densold(i,j,iSpin))**2
       enddo
     enddo
-!    call print_Mat(Dens(:,:,2),dim_1e,5,"DensB")
-  endif
+!    call print_Mat(Dens(:,:,iSpin),dim_1e,5,"DensX")
+  enddo
 
   Drmsd = sqrt(Drmsd/dble(dim_1e*dim_1e*Spins))
 

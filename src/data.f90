@@ -44,6 +44,9 @@ module module_data
   double precision, allocatable                 :: Vij(:,:)         
   double precision, allocatable                 :: Tij(:,:)         
   double precision, allocatable                 :: ERI(:)      
+! MO integrals           
+  double precision, allocatable                 :: MOI(:)
+  double precision, allocatable                 :: SMO(:,:,:,:)
            
 contains
 

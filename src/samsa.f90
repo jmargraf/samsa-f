@@ -3,10 +3,11 @@ program samsa
   use module_data,   only : read_input
   use module_data,   only : dimensions
   use module_data,   only : allocate_SCFmat 
-  use module_energy, only : calc_Enuc
+  use module_energy, only : calc_Enuc,calc_Emp2
   use module_ints,   only : calc_Ints
   use module_scf,    only : do_guess,dia_S,run_SCF
   use module_props,  only : print_Eigen
+  use module_trans,  only : trans_full
   implicit none
 
 ! read input and calculate dimensions
@@ -44,7 +45,8 @@ program samsa
   call print_Eigen()
 
 ! run post-scf
-
+  call trans_full()
+  call calc_Emp2()
 
 end program samsa
 

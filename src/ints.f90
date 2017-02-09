@@ -1,11 +1,6 @@
 module module_ints
   implicit none
 
-! Energies           
-! double precision                            :: Enuc     = 0.0d0
-! double precision                            :: Eelec    = 0.0d0         
-! double precision                            :: Etot     = 0.0d0          
-
 contains
 
 !#############################################
@@ -198,5 +193,21 @@ subroutine calc_ERI()
   close(50)
 
 end subroutine
+
+!#############################################
+!#              Calc 2e Indices                 
+!#############################################
+subroutine Index2e(i,j,ij)
+  implicit none
+  integer, intent(in)           :: i,j
+  integer, intent(out)          :: ij
+
+  if (i>j)then
+    ij = i*(i+1)/2 + j
+  else
+    ij = j*(j+1)/2 + i
+  endif
+
+end subroutine Index2e
 
 end module module_ints

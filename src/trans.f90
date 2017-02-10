@@ -22,8 +22,6 @@ subroutine trans_full
   double precision, allocatable :: in_ijkl(:,:,:,:)
   real                          :: starttime,stoptime,time
 
-!!$OMP THREADPRIVATE(p,q,r,s,pq,rs,pqrs,i,j,k,l,iSpin)
-
   write(*,*) "    "
   write(*,*) "    Performing full integral transformation... "
   write(*,*) "    "
@@ -40,6 +38,7 @@ subroutine trans_full
 
 ! pqrs -> pqrl
 !$ write(*,*) "      (in parallel)" !, OMP_NUM_THREADS
+  write(*,*) "      pqrs -> pqrl"
 !$OMP PARALLEL PRIVATE(p,q,r,s,pq,rs,pqrs)
 !$OMP DO
   do l=0,dimMO
@@ -68,12 +67,12 @@ subroutine trans_full
 !$OMP END DO
 !$OMP END PARALLEL
 
-  write(*,*) "      25% ..."
 
   allocate(in_pqkl(0:dimAO,0:dimAO,0:dimMO,0:dimMO))
   in_pqkl = 0.0d0
 
   ! pqrl -> pqkl
+  write(*,*) "      pqrl -> pqkl"
 !$OMP PARALLEL PRIVATE(p,q,r,l)
 !$OMP DO
   do k=0,dimMO
@@ -100,12 +99,11 @@ subroutine trans_full
 
   deallocate(in_pqrl)
 
-  write(*,*) "      50% ..."
-  
   allocate(in_pjkl(0:dimAO,0:dimMO,0:dimMO,0:dimMO))
   in_pjkl = 0.0d0
 
   ! pqkl -> pjkl
+  write(*,*) "      pqkl -> pjkl"
 !$OMP PARALLEL PRIVATE(p,q,k,l)
 !$OMP DO
   do j=0,dimMO
@@ -132,12 +130,11 @@ subroutine trans_full
 
   deallocate(in_pqkl)
 
-  write(*,*) "      75% ..."
-
   allocate(in_ijkl(0:dimMO,0:dimMO,0:dimMO,0:dimMO))
   in_ijkl = 0.0d0
 
   ! pjkl -> ijkl
+  write(*,*) "      pjkl -> ijkl"
 !$OMP PARALLEL PRIVATE(p,j,k,l)
 !$OMP DO
   do i=0,dimMO
@@ -164,7 +161,7 @@ subroutine trans_full
 
   deallocate(in_pjkl)
 
-  write(*,*) "     100% ..."
+  write(*,*) "      done ..."
   write(*,*) "    "
 
   if(spins == 1)then

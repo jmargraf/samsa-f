@@ -17,9 +17,10 @@ subroutine calc_EVPT2()
   double precision          :: dEV,corrEV
 
   write(*,*) "    "
-  write(*,*) "    Calculating MBPT(2) correlation corrections to eigenvalues"
+  write(*,*) "    Calculating MBPT(2) correlation corrections to eigenvalues (Ha)"
   write(*,*) "    "
-
+  write(*,*) "         iOrb      dE(PT2)      Eps(HF)       Eps(PT2)  "
+!                 MO:     1      0.00120     -11.20700     -11.20580 
 
 ! Only uses Alpha Channel
 ! IPs:
@@ -28,11 +29,12 @@ subroutine calc_EVPT2()
     call calc_Emp2()
     dEV = Emp2 - Emp2frac
     corrEV = Eps(i,1) + dEV
-    write(*,*) "MO:  ", i, dEV, Eps(i,1), corrEV
+    write(*,'("    MO: ",I5,3(" ",F12.5," "))') i, dEV, Eps(i,1), corrEV
     Occ(i,1) = 1.0d0
   enddo
 
-  write(*,*) "****************"
+!                 MO:     1      0.00120     -11.20700     -11.20580  
+  write(*,*) "        ***********************************************"
 
 ! EAs:
   do i=nOccA+1,dim_1e
@@ -40,7 +42,7 @@ subroutine calc_EVPT2()
     call calc_Emp2()
     dEV = Emp2 - Emp2frac
     corrEV = Eps(i,1) + dEV
-    write(*,*) "MO:  ", i, dEV, Eps(i,1), corrEV
+    write(*,'("    MO: ",I5,3(" ",F12.5," "))') i, dEV, Eps(i,1), corrEV
     Occ(i,1) = 0.0d0
   enddo
 

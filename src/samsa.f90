@@ -91,12 +91,12 @@ subroutine run_MP2()
     write(*,*) "    "
     call calc_Emp2()
     write(*,*) "    "
-    write(*,*) "      E_OS  = ", E_OS
-    write(*,*) "      E_SS  = ", E_SS
-    write(*,*) "      E_SSx = ", E_SSx
-    write(*,*) "      E_SSc = ", E_SSc
+    write(*,'("      E_OS  = ",F12.6)') E_OS
+    write(*,'("      E_SS  = ",F12.6)') E_SS
+    write(*,'("      E_SSx = ",F12.6)') E_SSx
+    write(*,'("      E_SSc = ",F12.6)') E_SSc
     write(*,*) "    "
-    write(*,*) "      Emp2  = ", Emp2
+    write(*,'("      EMP2  = ",F12.6)') Emp2
     write(*,*) "    "
   elseif(spins==2)then
     write(*,*) "    "
@@ -104,26 +104,25 @@ subroutine run_MP2()
     write(*,*) "    "
     call calc_Emp2()
     write(*,*) "    "
-    write(*,*) "      E_OS  = ", E_OS
-    write(*,*) "      E_AAx = ", E_AAx
-    write(*,*) "      E_AAc = ", E_AAc
-    write(*,*) "      E_BBx = ", E_BBx
-    write(*,*) "      E_BBc = ", E_BBc
+    write(*,'("      E_OS  = ",F12.6)') E_OS
+    write(*,'("      E_AAx = ",F12.6)') E_AAx
+    write(*,'("      E_AAc = ",F12.6)') E_AAc
+    write(*,'("      E_BBx = ",F12.6)') E_BBx
+    write(*,'("      E_BBc = ",F12.6)') E_BBc
     write(*,*) "    "
-    write(*,*) "      Emp2  = ", Emp2
-    write(*,*) "    "
+    write(*,'("      EMP2  = ",F12.6)') Emp2
     write(*,*) "    "
     write(*,*) "    "
     write(*,*) "    Calculating UHF-MBPT(2) correlation energy (nOcc version)"
     write(*,*) "    "
     write(*,*) "    "
-    write(*,*) "      E_OS  = ", E_OS
-    write(*,*) "      E_AAx = ", E_AAx
-    write(*,*) "      E_AAc = ", E_AAc
-    write(*,*) "      E_BBx = ", E_BBx
-    write(*,*) "      E_BBc = ", E_BBc
+    write(*,'("      E_OS  = ",F12.6)') E_OS
+    write(*,'("      E_AAx = ",F12.6)') E_AAx
+    write(*,'("      E_AAc = ",F12.6)') E_AAc
+    write(*,'("      E_BBx = ",F12.6)') E_BBx
+    write(*,'("      E_BBc = ",F12.6)') E_BBc
     write(*,*) "    "
-    write(*,*) "      Emp2  = ", Emp2frac
+    write(*,'("      EMP2  = ",F12.6)') Emp2frac
     write(*,*) "    "
   endif
 

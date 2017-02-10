@@ -7,6 +7,9 @@ module module_energy
   double precision                            :: Etot     = 0.0d0          
   double precision                            :: Eold     = 0.0d0 
   double precision                            :: Emp2     = 0.0d0
+  double precision                            :: Emp2frac = 0.0d0
+  double precision                            :: E_OS,E_SS,E_SSx,E_SSc
+  double precision                            :: E_AAx,E_AAc,E_BBx,E_BBc
 
 contains
 
@@ -18,8 +21,6 @@ subroutine calc_Emp2
   use module_ints, only      : Index2e
   implicit none
   integer                   :: iSpin,i,j,a,b,ia,ja,jb,ib,iajb,ibja
-  double precision          :: E_OS,E_SS,E_SSx,E_SSc
-  double precision          :: E_AAx,E_AAc,E_BBx,E_BBc
   double precision          :: occ_factor
 
   Emp2  = 0.0d0
@@ -33,9 +34,9 @@ subroutine calc_Emp2
   E_BBc = 0.0d0
 
   if(spins==1)then
-    write(*,*) "    "
-    write(*,*) "    Calculating RHF-MBPT(2) correlation energy"
-    write(*,*) "    "
+!    write(*,*) "    "
+!    write(*,*) "    Calculating RHF-MBPT(2) correlation energy"
+!    write(*,*) "    "
 
     do i=0,nOccA-1
       do a=nOccA,dim_1e-1
@@ -67,20 +68,20 @@ subroutine calc_Emp2
 
     Emp2 = E_OS + E_SS
 
-    write(*,*) "    "
-    write(*,*) "      E_OS  = ", E_OS
-    write(*,*) "      E_SS  = ", E_SS
-    write(*,*) "      E_SSx = ", E_SSx
-    write(*,*) "      E_SSc = ", E_SSc
-    write(*,*) "    "
-    write(*,*) "      Emp2  = ", Emp2
-    write(*,*) "    "
+!    write(*,*) "    "
+!    write(*,*) "      E_OS  = ", E_OS
+!    write(*,*) "      E_SS  = ", E_SS
+!    write(*,*) "      E_SSx = ", E_SSx
+!    write(*,*) "      E_SSc = ", E_SSc
+!    write(*,*) "    "
+!    write(*,*) "      Emp2  = ", Emp2
+!    write(*,*) "    "
 
 
   elseif(spins==2)then
-    write(*,*) "    "
-    write(*,*) "    Calculating UHF-MBPT(2) correlation energy"
-    write(*,*) "    "
+!    write(*,*) "    "
+!    write(*,*) "    Calculating UHF-MBPT(2) correlation energy"
+!    write(*,*) "    "
 
     ! Opposite Spin 
     do i=1,nOccA*2-1,2
@@ -141,39 +142,39 @@ subroutine calc_Emp2
 
     Emp2 = E_OS + E_AAc + E_AAx + E_BBx + E_BBc
 
-    write(*,*) "    "
-    write(*,*) "      E_OS  = ", E_OS
-    write(*,*) "      E_AAx = ", E_AAx
-    write(*,*) "      E_AAc = ", E_AAc
-    write(*,*) "      E_BBx = ", E_BBx
-    write(*,*) "      E_BBc = ", E_BBc
-    write(*,*) "    "
-    write(*,*) "      Emp2  = ", Emp2
-    write(*,*) "    "
+!    write(*,*) "    "
+!    write(*,*) "      E_OS  = ", E_OS
+!    write(*,*) "      E_AAx = ", E_AAx
+!    write(*,*) "      E_AAc = ", E_AAc
+!    write(*,*) "      E_BBx = ", E_BBx
+!    write(*,*) "      E_BBc = ", E_BBc
+!    write(*,*) "    "
+!    write(*,*) "      Emp2  = ", Emp2
+!    write(*,*) "    "
 
   endif
 
   if(spins==2)then
-    write(*,*) "    "
-    write(*,*) "    Calculating UHF-MBPT(2) correlation energy (nOcc version)"
-    write(*,*) "    "
+!    write(*,*) "    "
+!    write(*,*) "    Calculating UHF-MBPT(2) correlation energy (nOcc version)"
+!    write(*,*) "    "
 
-    Emp2  = 0.0d0
-    E_OS  = 0.0d0
-    E_SS  = 0.0d0
-    E_SSx = 0.0d0
-    E_SSc = 0.0d0
-    E_AAx = 0.0d0
-    E_AAc = 0.0d0
-    E_BBx = 0.0d0
-    E_BBc = 0.0d0
+    Emp2frac = 0.0d0
+    E_OS     = 0.0d0
+    E_SS     = 0.0d0
+    E_SSx    = 0.0d0
+    E_SSc    = 0.0d0
+    E_AAx    = 0.0d0
+    E_AAc    = 0.0d0
+    E_BBx    = 0.0d0
+    E_BBc    = 0.0d0
 
     ! Opposite Spin 
     do i=1,dim_1e*2-1,2
       do a=1,dim_1e*2-1,2
         do j=2,dim_1e*2,2
           do b=2,dim_1e*2,2
-            occ_factor = dble(Occ((i+1)/2,1)*(1-Occ((a+1)/2,1))*Occ(j/2,2)*(1-Occ(b/2,2)))
+            occ_factor = (Occ((i+1)/2,1)*(1-Occ((a+1)/2,1))*Occ(j/2,2)*(1-Occ(b/2,2)))
             if (occ_factor==0.0d0) cycle
             E_OS  = E_OS  - (SMO(i,a,j,b)*SMO(i,a,j,b))*occ_factor/       &
                             (Eps((a+1)/2,1)+Eps((b/2),2)                &
@@ -190,7 +191,7 @@ subroutine calc_Emp2
       do a=1,dim_1e*2-1,2
         do j=1,dim_1e*2-1,2
           do b=1,dim_1e*2-1,2
-            occ_factor = dble(Occ((i+1)/2,1)*(1-Occ((a+1)/2,1))*Occ((j+1)/2,2)*(1-Occ((b+1)/2,2)))
+            occ_factor = (Occ((i+1)/2,1)*(1-Occ((a+1)/2,1))*Occ((j+1)/2,1)*(1-Occ((b+1)/2,1)))
             if (occ_factor==0.0d0) cycle
             E_AAc = E_AAc - (SMO(i,a,j,b)*SMO(i,a,j,b))*0.5d0*occ_factor/  &
                             (Eps((a+1)/2,1)+Eps((b+1)/2,1)                 &
@@ -212,7 +213,7 @@ subroutine calc_Emp2
       do a=2,dim_1e*2,2
         do j=2,dim_1e*2,2
           do b=2,dim_1e*2,2
-            occ_factor = dble(Occ(i/2,1)*(1-Occ(a/2,1))*Occ(j/2,2)*(1-Occ(b/2,2)))
+            occ_factor = (Occ(i/2,2)*(1-Occ(a/2,2))*Occ(j/2,2)*(1-Occ(b/2,2)))
             if (occ_factor==0.0d0) cycle
             E_BBc = E_BBc - (SMO(i,a,j,b)*SMO(i,a,j,b))*0.5d0*occ_factor/  &
                             (Eps((a/2),2)+Eps((b/2),2)                     &
@@ -228,17 +229,17 @@ subroutine calc_Emp2
       enddo
     enddo
 
-    Emp2 = E_OS + E_AAc + E_AAx + E_BBx + E_BBc
+    Emp2frac = E_OS + E_AAc + E_AAx + E_BBx + E_BBc
 
-    write(*,*) "    "
-    write(*,*) "      E_OS  = ", E_OS
-    write(*,*) "      E_AAx = ", E_AAx
-    write(*,*) "      E_AAc = ", E_AAc
-    write(*,*) "      E_BBx = ", E_BBx
-    write(*,*) "      E_BBc = ", E_BBc
-    write(*,*) "    "
-    write(*,*) "      Emp2  = ", Emp2
-    write(*,*) "    "
+!    write(*,*) "    "
+!    write(*,*) "      E_OS  = ", E_OS
+!    write(*,*) "      E_AAx = ", E_AAx
+!    write(*,*) "      E_AAc = ", E_AAc
+!    write(*,*) "      E_BBx = ", E_BBx
+!    write(*,*) "      E_BBc = ", E_BBc
+!    write(*,*) "    "
+!    write(*,*) "      Emp2  = ", Emp2frac
+!    write(*,*) "    "
 
   endif
 

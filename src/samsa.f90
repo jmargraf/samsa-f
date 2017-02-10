@@ -3,12 +3,13 @@ program samsa
   use module_data,   only : read_input
   use module_data,   only : dimensions
   use module_data,   only : allocate_SCFmat 
-  use module_data,   only : doMP2,Fract
+  use module_data,   only : doMP2,Fract,doEVPT2
   use module_energy, only : calc_Enuc,calc_Emp2
   use module_ints,   only : calc_Ints,get_Occ
   use module_scf,    only : do_guess,dia_S,run_SCF
   use module_props,  only : print_Eigen
-  use module_trans,  only : trans_full
+  use module_trans,  only : trans_full,transdone
+  use module_occupy, only : calc_EVPT2
   implicit none
 
 ! read input and calculate dimensions
@@ -50,6 +51,14 @@ program samsa
 ! run properties
   call print_Eigen()
 
+! run occupation number schemes
+  if(doEVPT2)then
+    if(.not.transdone)then
+      call trans_full()
+    endif
+    call calc_EVPT2()
+  endif
+
 ! using fractional occupation numbers in post-HF?
   if(Fract==2)then
     call get_Occ()
@@ -57,10 +66,73 @@ program samsa
 
 ! run post-scf
   if(doMP2)then
-    call trans_full()
-    call calc_Emp2()
+    if(.not.transdone)then
+      call trans_full()
+    endif
+    call run_MP2()
   endif
 
 end program samsa
+
+
+
+subroutine run_MP2()
+  use module_energy, only : calc_Emp2
+  use module_energy, only : Emp2     
+  use module_energy, only : Emp2frac 
+  use module_energy, only : E_OS,E_SS,E_SSx,E_SSc
+  use module_energy, only : E_AAx,E_AAc,E_BBx,E_BBc
+  use module_data,   only : Spins
+  implicit none
+
+  if(spins==1)then
+    write(*,*) "    "
+    write(*,*) "    Calculating RHF-MBPT(2) correlation energy"
+    write(*,*) "    "
+    call calc_Emp2()
+    write(*,*) "    "
+    write(*,*) "      E_OS  = ", E_OS
+    write(*,*) "      E_SS  = ", E_SS
+    write(*,*) "      E_SSx = ", E_SSx
+    write(*,*) "      E_SSc = ", E_SSc
+    write(*,*) "    "
+    write(*,*) "      Emp2  = ", Emp2
+    write(*,*) "    "
+  elseif(spins==2)then
+    write(*,*) "    "
+    write(*,*) "    Calculating UHF-MBPT(2) correlation energy"
+    write(*,*) "    "
+    call calc_Emp2()
+    write(*,*) "    "
+    write(*,*) "      E_OS  = ", E_OS
+    write(*,*) "      E_AAx = ", E_AAx
+    write(*,*) "      E_AAc = ", E_AAc
+    write(*,*) "      E_BBx = ", E_BBx
+    write(*,*) "      E_BBc = ", E_BBc
+    write(*,*) "    "
+    write(*,*) "      Emp2  = ", Emp2
+    write(*,*) "    "
+    write(*,*) "    "
+    write(*,*) "    "
+    write(*,*) "    Calculating UHF-MBPT(2) correlation energy (nOcc version)"
+    write(*,*) "    "
+    write(*,*) "    "
+    write(*,*) "      E_OS  = ", E_OS
+    write(*,*) "      E_AAx = ", E_AAx
+    write(*,*) "      E_AAc = ", E_AAc
+    write(*,*) "      E_BBx = ", E_BBx
+    write(*,*) "      E_BBc = ", E_BBc
+    write(*,*) "    "
+    write(*,*) "      Emp2  = ", Emp2frac
+    write(*,*) "    "
+  endif
+
+end subroutine run_MP2
+
+
+
+
+
+
 
 

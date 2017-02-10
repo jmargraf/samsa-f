@@ -1,5 +1,6 @@
 module module_trans
   implicit none
+  logical                       :: transdone = .false. 
 
 contains
 
@@ -19,10 +20,17 @@ subroutine trans_full
   double precision, allocatable :: in_pqkl(:,:,:,:)
   double precision, allocatable :: in_pjkl(:,:,:,:)
   double precision, allocatable :: in_ijkl(:,:,:,:)
+  real                          :: starttime,stoptime,time
+
+!!$OMP THREADPRIVATE(p,q,r,s,pq,rs,pqrs,i,j,k,l,iSpin)
 
   write(*,*) "    "
   write(*,*) "    Performing full integral transformation... "
   write(*,*) "    "
+
+  starttime = secnds(0.0)
+!  call cpu_time(starttime)
+!!$  call omp_get_wtime(starttime)
 
   dimMO = (spins*dim_1e) - 1
   dimAO = dim_1e - 1
@@ -30,7 +38,10 @@ subroutine trans_full
   allocate(in_pqrl(0:dimAO,0:dimAO,0:dimAO,0:dimMO))
   in_pqrl = 0.0d0
 
-  ! pqrs -> pqrl
+! pqrs -> pqrl
+!$ write(*,*) "      (in parallel)" !, OMP_NUM_THREADS
+!$OMP PARALLEL PRIVATE(p,q,r,s,pq,rs,pqrs)
+!$OMP DO
   do l=0,dimMO
     do p=0,dimAO
       do q=0,dimAO
@@ -54,6 +65,8 @@ subroutine trans_full
       enddo
     enddo
   enddo
+!$OMP END DO
+!$OMP END PARALLEL
 
   write(*,*) "      25% ..."
 
@@ -61,6 +74,8 @@ subroutine trans_full
   in_pqkl = 0.0d0
 
   ! pqrl -> pqkl
+!$OMP PARALLEL PRIVATE(p,q,r,l)
+!$OMP DO
   do k=0,dimMO
     do p=0,dimAO
       do q=0,dimAO
@@ -80,6 +95,8 @@ subroutine trans_full
       enddo
     enddo
   enddo
+!$OMP END DO
+!$OMP END PARALLEL
 
   deallocate(in_pqrl)
 
@@ -89,6 +106,8 @@ subroutine trans_full
   in_pjkl = 0.0d0
 
   ! pqkl -> pjkl
+!$OMP PARALLEL PRIVATE(p,q,k,l)
+!$OMP DO
   do j=0,dimMO
     do p=0,dimAO
       do q=0,dimAO
@@ -108,6 +127,8 @@ subroutine trans_full
       enddo
     enddo
   enddo
+!$OMP END DO
+!$OMP END PARALLEL
 
   deallocate(in_pqkl)
 
@@ -117,6 +138,8 @@ subroutine trans_full
   in_ijkl = 0.0d0
 
   ! pjkl -> ijkl
+!$OMP PARALLEL PRIVATE(p,j,k,l)
+!$OMP DO
   do i=0,dimMO
     do p=0,dimAO
       do j=0,dimMO
@@ -136,6 +159,8 @@ subroutine trans_full
       enddo
     enddo
   enddo
+!$OMP END DO
+!$OMP END PARALLEL
 
   deallocate(in_pjkl)
 
@@ -176,6 +201,14 @@ subroutine trans_full
   endif
     
   deallocate(in_ijkl)
+
+  transdone = .true.
+
+  time=secnds(starttime)
+!  call cpu_time(stoptime)
+!!$  call omp_get_wtime(stoptime)
+!  time = stoptime-starttime
+  write(*,*) "Integral transformation done in ",time," s"
 
 end subroutine trans_full
 

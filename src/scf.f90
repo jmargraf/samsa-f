@@ -52,7 +52,132 @@ subroutine run_SCF
   write(*,*) "         Eelec=",Eelec
   write(*,*) "    Final Etot=",Etot
 
+!  call Fock_to_MO()
+!  call Fock_to_AO()
+
 end subroutine run_SCF
+
+!#############################################
+!#          Recalculate WF non-SCF    
+!#############################################
+subroutine recalc_WF()
+  use module_data, only     : MaxSCF 
+  use module_energy, only   : Eold,calc_Energy,Etot,Eelec
+  implicit none
+  integer                  :: iSCF
+
+  write(*,*) ""
+  write(*,*) "   non-SCF recalculation of WF ..."
+  write(*,*) ""
+
+  Eold = Etot
+
+  call calc_Dens()
+
+  call calc_Fock()
+
+  call ort_Fock()
+
+  call dia_Fock()
+
+  call deort_Fock()
+
+  call calc_Dens()
+
+  call calc_Energy()
+
+  dE = Etot - Eold
+
+  !  iSCF   Etot  dE   Drmsd
+  write(*,'("Modified WF:  ","  ",2(F18.10,"  "))') Etot, dE 
+
+! write(*,*) "         Eelec=",Eelec
+! write(*,*) "    Final Etot=",Etot
+
+end subroutine recalc_WF
+
+
+!#############################################
+!#       Transform Fockian to MO Basis
+!#############################################
+subroutine Fock_to_MO()
+  use module_data, only      : Fock,Coef,dim_1e,Spins
+  use module_io, only        : print_Mat
+  implicit none
+  integer                         :: i
+  double precision, allocatable   :: temp(:,:)
+
+  write(*,*) ""
+  write(*,*) "   transform Fockian to MO-basis ..."
+  write(*,*) ""
+
+  allocate(temp(dim_1e,dim_1e))
+
+  do i=1,Spins
+!  $::Fock = transpose($::Coef) x $::Fock x $::Coef;
+!    call print_Mat(Fock(:,:,i),dim_1e,7,"AO Fock")
+    call dgemm('N','N',dim_1e,dim_1e,dim_1e,1.0d0,  &
+                Fock(1:dim_1e,1:dim_1e,i),dim_1e,   &
+                Coef(1:dim_1e,1:dim_1e,i),dim_1e,   &
+                0.0d0,temp(1:dim_1e,1:dim_1e),dim_1e)
+    call dgemm('T','N',dim_1e,dim_1e,dim_1e,1.0d0,  &
+                Coef(1:dim_1e,1:dim_1e,i),dim_1e,   &
+                temp(1:dim_1e,1:dim_1e),dim_1e,     &
+                0.0d0,Fock(1:dim_1e,1:dim_1e,i),dim_1e)
+!    call print_Mat(Fock(:,:,i),dim_1e,7,"MO Fock")
+  enddo
+
+  deallocate(temp)
+
+end subroutine Fock_to_MO
+
+
+!#############################################
+!#       Transform Fockian to MO Basis
+!#############################################
+subroutine Fock_to_AO()
+  use module_data, only      : Fock,Coef,Sij,dim_1e,Spins
+  use module_io, only        : print_Mat
+  implicit none
+  integer                         :: i
+  double precision, allocatable   :: temp1(:,:)
+  double precision, allocatable   :: temp2(:,:)
+  double precision, allocatable   :: temp3(:,:)
+
+  write(*,*) ""
+  write(*,*) "   transform Fockian to AO-basis ..."
+  write(*,*) ""
+
+  allocate(temp1(dim_1e,dim_1e))
+  allocate(temp2(dim_1e,dim_1e))
+  allocate(temp3(dim_1e,dim_1e))
+
+  do i=1,Spins
+!  $::Fock = $::Sij x $::Coeff x $::Fock x transpose($::Coeff) x $::Sij;
+    call dgemm('N','N',dim_1e,dim_1e,dim_1e,1.0d0,    &
+                Sij(1:dim_1e,1:dim_1e),dim_1e,        &
+                Coef(1:dim_1e,1:dim_1e,i),dim_1e,     &
+                0.0d0,temp1(1:dim_1e,1:dim_1e),dim_1e)
+    call dgemm('T','N',dim_1e,dim_1e,dim_1e,1.0d0,    &
+                Coef(1:dim_1e,1:dim_1e,i),dim_1e,     &
+                Sij(1:dim_1e,1:dim_1e),dim_1e,        &
+                0.0d0,temp2(1:dim_1e,1:dim_1e),dim_1e)
+    call dgemm('N','N',dim_1e,dim_1e,dim_1e,1.0d0,    &
+                Fock(1:dim_1e,1:dim_1e,i),dim_1e,     &
+                temp2(1:dim_1e,1:dim_1e),dim_1e,      &
+                0.0d0,temp3(1:dim_1e,1:dim_1e),dim_1e)
+    call dgemm('N','N',dim_1e,dim_1e,dim_1e,1.0d0,    &
+                temp1(1:dim_1e,1:dim_1e),dim_1e,      &
+                temp3(1:dim_1e,1:dim_1e),dim_1e,      &
+                0.0d0,Fock(1:dim_1e,1:dim_1e,i),dim_1e)
+!    call print_Mat(Fock(:,:,i),dim_1e,7,"AO Fock")
+  enddo
+  
+  deallocate(temp1,temp2,temp3)
+
+end subroutine Fock_to_AO
+
+
 
 !#############################################
 !#              Initial Guess       

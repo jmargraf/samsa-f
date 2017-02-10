@@ -28,6 +28,7 @@ module module_data
   double precision                              :: Damp = 0.5d0
   logical                                       :: DoDamp = .true.
   logical                                       :: DoMP2 = .false.
+  logical                                       :: DoEVPT2 = .false.
   integer                                       :: Fract = 0 
   character(len=4)                              :: guess = "core"
   double precision                              :: Par(4) = 0.0d0
@@ -980,6 +981,10 @@ subroutine parse_option(argument)
   elseif(uargument(1:6)=='FRACT=')then
     read(UArgument(7:),*) Fract
     write(*,*) '    FRACT     = ',Fract
+
+  elseif(uargument(1:5)=='EVPT2')then
+    doEVPT2 = .true.
+    write(*,*) '    EVPT(2) '
 
   else
     write(*,*) "    Unknown Argument :", uargument

@@ -487,7 +487,7 @@ subroutine calc_Dens()
       do j=1,i
         Dens(i,j,iSpin) = 0.0d0
         do k=1,dim_1e
-          Dens(i,j,iSpin) = Dens(i,j,iSpin) + Occ(k,iSpin)*Coef(i,k,iSpin)*Coef(j,k,iSpin)
+          Dens(i,j,iSpin) = Dens(i,j,iSpin) + Occ(k,iSpin)*Coef(i,k,iSpin)*Coef(j,k,iSpin)*0.5d0*Spins
         enddo
         Dens(j,i,iSpin) = Dens(i,j,iSpin)
         Drmsd = Drmsd + (Dens(i,j,iSpin)-Densold(i,j,iSpin))**2

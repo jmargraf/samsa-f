@@ -29,10 +29,12 @@ module module_data
   logical                                       :: DoDamp = .true.
   logical                                       :: DoMP2 = .false.
   logical                                       :: DoEVPT2 = .false.
+  logical                                       :: DoDrop = .true.
   integer                                       :: Fract = 0 
   character(len=4)                              :: guess = "core"
   double precision                              :: Par(4) = 0.0d0
   integer                                       :: scaletype = 1
+  integer                                       :: DropMO = 0
 
 ! SCF matrices
   double precision, allocatable                 :: Fock(:,:,:)  
@@ -177,6 +179,7 @@ subroutine dimensions()
              (atom(i) == "F")  .or. &
              (atom(i) == "Ne"))then
         dim_1e = dim_1e + 5
+        dropMO = dropMO + 1
       elseif((atom(i) == "Na") .or. &
              (atom(i) == "Mg") .or. &
              (atom(i) == "Al") .or. &
@@ -186,6 +189,7 @@ subroutine dimensions()
              (atom(i) == "Cl") .or. &
              (atom(i) == "Ar"))then
         dim_1e = dim_1e + 9
+        dropMO = dropMO + 2
       endif
     enddo
   elseif(basis_set == "svp")then
@@ -197,6 +201,7 @@ subroutine dimensions()
       elseif((atom(i) == "Li") .or. &
              (atom(i) == "Be"))then
         dim_1e = dim_1e + 9
+        dropMO = dropMO + 1
       elseif((atom(i) == "B")  .or. &
              (atom(i) == "C")  .or. &
              (atom(i) == "N")  .or. &
@@ -204,8 +209,10 @@ subroutine dimensions()
              (atom(i) == "F")  .or. &
              (atom(i) == "Ne"))then
         dim_1e = dim_1e + 14
+        dropMO = dropMO + 1
       elseif((atom(i) == "Na"))then  
         dim_1e = dim_1e + 15
+        dropMO = dropMO + 2
       elseif((atom(i) == "Mg") .or. &
              (atom(i) == "Al") .or. &
              (atom(i) == "Si") .or. &
@@ -214,6 +221,7 @@ subroutine dimensions()
              (atom(i) == "Cl") .or. &
              (atom(i) == "Ar"))then
         dim_1e = dim_1e + 18
+        dropMO = dropMO + 2
       endif
     enddo    
   elseif(basis_set == "tzp")then
@@ -223,8 +231,10 @@ subroutine dimensions()
         dim_1e = dim_1e + 6
       elseif((atom(i) == "Li"))then 
         dim_1e = dim_1e + 14
+        dropMO = dropMO + 1
       elseif((atom(i) == "Be"))then
         dim_1e = dim_1e + 19
+        dropMO = dropMO + 1
       elseif((atom(i) == "B")  .or. &  
              (atom(i) == "C")  .or. &  
              (atom(i) == "N")  .or. &  
@@ -232,9 +242,11 @@ subroutine dimensions()
              (atom(i) == "F")  .or. &
              (atom(i) == "Ne"))then
         dim_1e = dim_1e + 31
+        dropMO = dropMO + 1
       elseif((atom(i) == "Na") .or. &
              (atom(i) == "Mg"))then
         dim_1e = dim_1e + 32
+        dropMO = dropMO + 2
       elseif((atom(i) == "Al") .or. &
              (atom(i) == "Si") .or. &
              (atom(i) == "P")  .or. &
@@ -242,6 +254,7 @@ subroutine dimensions()
              (atom(i) == "Cl") .or. &
              (atom(i) == "Ar"))then
         dim_1e = dim_1e + 37
+        dropMO = dropMO + 2
       endif 
     enddo
   endif
@@ -985,6 +998,14 @@ subroutine parse_option(argument)
   elseif(uargument(1:5)=='EVPT2')then
     doEVPT2 = .true.
     write(*,*) '    EVPT(2) '
+
+  elseif(uargument(1:4)=='DROP')then
+    doDrop = .true.
+    write(*,*) '    Dropping core'
+
+  elseif(uargument(1:6)=='NODROP')then
+    doDrop = .false.
+    write(*,*) '    Not dropping core'
 
   else
     write(*,*) "    Unknown Argument :", uargument

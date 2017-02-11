@@ -17,10 +17,11 @@ contains
 !#            Calculate E_mp2
 !#############################################
 subroutine calc_Emp2
-  use module_data, only      : MOI,Spins,dim_1e,nOccA,nOccB,Eps,SMO,Occ
-  use module_ints, only      : Index2e
+  use module_data,      only : MOI,Spins,dim_1e,nOccA,nOccB,Eps,SMO,Occ
+  use module_data,      only : DropMO,DoDrop
+  use module_ints,      only : Index2e
   implicit none
-  integer                   :: iSpin,i,j,a,b,ia,ja,jb,ib,iajb,ibja
+  integer                   :: iSpin,i,j,a,b,ia,ja,jb,ib,iajb,ibja,MOZero
   double precision          :: occ_factor
 
   Emp2  = 0.0d0
@@ -33,15 +34,23 @@ subroutine calc_Emp2
   E_BBx = 0.0d0
   E_BBc = 0.0d0
 
+  MOZero = 0
+
   if(spins==1)then
 !    write(*,*) "    "
 !    write(*,*) "    Calculating RHF-MBPT(2) correlation energy"
 !    write(*,*) "    "
 
-    do i=0,nOccA-1
+    if(DoDrop)then
+      MOZero = DropMO
+    else
+      MOZero = 0
+    endif
+
+    do i=MOZero,nOccA-1
       do a=nOccA,dim_1e-1
         call Index2e(i,a,ia)
-        do j=0,nOccA-1
+        do j=MOZero,nOccA-1
           call Index2E(j,a,ja)
           do b=nOccA,dim_1e-1
             call Index2e(j,b,jb)
@@ -83,10 +92,16 @@ subroutine calc_Emp2
 !    write(*,*) "    Calculating UHF-MBPT(2) correlation energy"
 !    write(*,*) "    "
 
+    if(DoDrop)then
+      MOZero = DropMO*2+1
+    else
+      MOZero = 1
+    endif
+
     ! Opposite Spin 
-    do i=1,nOccA*2-1,2
+    do i=MOZero,nOccA*2-1,2
       do a=nOccA*2+1,dim_1e*2-1,2
-        do j=2,nOccB*2,2
+        do j=MOZero+1,nOccB*2,2
           do b=nOccB*2+2,dim_1e*2,2
 
             E_OS  = E_OS  - (SMO(i,a,j,b)*SMO(i,a,j,b))/            &
@@ -100,9 +115,9 @@ subroutine calc_Emp2
     enddo
 
     ! Same Spin AA
-    do i=1,nOccA*2-1,2
+    do i=MOZero,nOccA*2-1,2
       do a=nOccA*2+1,dim_1e*2-1,2
-        do j=1,nOccA*2-1,2
+        do j=MOZero,nOccA*2-1,2
           do b=nOccA*2+1,dim_1e*2-1,2
 
             E_AAc = E_AAc - (SMO(i,a,j,b)*SMO(i,a,j,b))*0.5d0/      &
@@ -121,9 +136,9 @@ subroutine calc_Emp2
 
 
     ! Same Spin BB
-    do i=2,nOccB*2,2
+    do i=MOZero+1,nOccB*2,2
       do a=nOccB*2+2,dim_1e*2,2
-        do j=2,nOccB*2,2
+        do j=MOZero+1,nOccB*2,2
           do b=nOccB*2+2,dim_1e*2,2
 
             E_BBc = E_BBc - (SMO(i,a,j,b)*SMO(i,a,j,b))*0.5d0/      &
@@ -159,6 +174,10 @@ subroutine calc_Emp2
 !    write(*,*) "    Calculating UHF-MBPT(2) correlation energy (nOcc version)"
 !    write(*,*) "    "
 
+    if(DoDrop)then
+      MOZero = DropMO*2+1
+    endif
+
     Emp2frac = 0.0d0
     E_OS     = 0.0d0
     E_SS     = 0.0d0
@@ -170,10 +189,10 @@ subroutine calc_Emp2
     E_BBc    = 0.0d0
 
     ! Opposite Spin 
-    do i=1,dim_1e*2-1,2
-      do a=1,dim_1e*2-1,2
-        do j=2,dim_1e*2,2
-          do b=2,dim_1e*2,2
+    do i=MOZero,dim_1e*2-1,2
+      do a=MOZero,dim_1e*2-1,2
+        do j=MOZero+1,dim_1e*2,2
+          do b=MOZero+1,dim_1e*2,2
             occ_factor = (Occ((i+1)/2,1)*(1-Occ((a+1)/2,1))*Occ(j/2,2)*(1-Occ(b/2,2)))
             if (occ_factor==0.0d0) cycle
             E_OS  = E_OS  - (SMO(i,a,j,b)*SMO(i,a,j,b))*occ_factor/       &
@@ -187,10 +206,10 @@ subroutine calc_Emp2
     enddo
 
     ! Same Spin AA
-    do i=1,dim_1e*2-1,2
-      do a=1,dim_1e*2-1,2
-        do j=1,dim_1e*2-1,2
-          do b=1,dim_1e*2-1,2
+    do i=MOZero,dim_1e*2-1,2
+      do a=MOZero,dim_1e*2-1,2
+        do j=MOZero,dim_1e*2-1,2
+          do b=MOZero,dim_1e*2-1,2
             occ_factor = (Occ((i+1)/2,1)*(1-Occ((a+1)/2,1))*Occ((j+1)/2,1)*(1-Occ((b+1)/2,1)))
             if (occ_factor==0.0d0) cycle
             E_AAc = E_AAc - (SMO(i,a,j,b)*SMO(i,a,j,b))*0.5d0*occ_factor/  &
@@ -209,10 +228,10 @@ subroutine calc_Emp2
 
 
     ! Same Spin BB
-    do i=2,dim_1e*2,2
-      do a=2,dim_1e*2,2
-        do j=2,dim_1e*2,2
-          do b=2,dim_1e*2,2
+    do i=MOZero+1,dim_1e*2,2
+      do a=MOZero+1,dim_1e*2,2
+        do j=MOZero+1,dim_1e*2,2
+          do b=MOZero+1,dim_1e*2,2
             occ_factor = (Occ(i/2,2)*(1-Occ(a/2,2))*Occ(j/2,2)*(1-Occ(b/2,2)))
             if (occ_factor==0.0d0) cycle
             E_BBc = E_BBc - (SMO(i,a,j,b)*SMO(i,a,j,b))*0.5d0*occ_factor/  &

@@ -96,7 +96,7 @@ sub RunPsi{
   print PSI "while (i < $dim): \n";
   print PSI "  j=0 \n";
   print PSI "  while (j <= i): \n";
-  print PSI "    print '  %d  %d    %f' % (i,j,np_S[i][j]) \n";
+  print PSI "    print '  %d  %d    %.15f' % (i,j,np_S[i][j]) \n";
   print PSI "    j = j+1 \n";
   print PSI "  i = i+1 \n";
   print PSI " \n";
@@ -108,7 +108,7 @@ sub RunPsi{
   print PSI "while (i < $dim): \n";
   print PSI "  j=0 \n";
   print PSI "  while (j <= i): \n";
-  print PSI "    print '  %d  %d    %f' % (i,j,np_T[i][j]) \n";
+  print PSI "    print '  %d  %d    %.15f' % (i,j,np_T[i][j]) \n";
   print PSI "    j = j+1 \n";
   print PSI "  i = i+1 \n";
   print PSI " \n";
@@ -120,7 +120,7 @@ sub RunPsi{
   print PSI "while (i < $dim): \n";
   print PSI "  j=0 \n";
   print PSI "  while (j <= i): \n";
-  print PSI "    print '  %d  %d    %f' % (i,j,np_V[i][j]) \n";
+  print PSI "    print '  %d  %d    %.15f' % (i,j,np_V[i][j]) \n";
   print PSI "    j = j+1 \n";
   print PSI "  i = i+1 \n";
   print PSI " \n";
@@ -142,7 +142,7 @@ sub RunPsi{
   print PSI "        ij = i*(i+1)/2+j \n";
   print PSI "        kl = k*(k+1)/2+l \n";
   print PSI "        if ij>=kl: \n";
-  print PSI "          print '  %d  %d  %d  %d   %f' % (i,j,k,l,np_ERI[i][j][k][l]) \n";
+  print PSI "          print '  %d  %d  %d  %d   %.15f' % (i,j,k,l,np_ERI[i][j][k][l]) \n";
   print PSI "          count = count + 1 \n";
   print PSI "        l=l+1 \n";
   print PSI "      k=k+1 \n";

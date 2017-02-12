@@ -16,6 +16,9 @@ subroutine run_SCF
   use module_energy, only   : Eold,calc_Energy,Etot,Eelec
   implicit none
   integer                  :: iSCF
+  real                     :: time, starttime
+
+  starttime=secnds(0.0)
 
   write(*,*) ""
   write(*,*) "    starting SCF ..."
@@ -53,6 +56,10 @@ subroutine run_SCF
 
   write(*,*) "         Eelec =",Eelec
   write(*,*) "    Final Etot =",Etot
+
+  time=secnds(starttime)
+  write(*,*) "      SCF done ",time," s"
+
 
 !  call Fock_to_MO()
 !  call Fock_to_AO()

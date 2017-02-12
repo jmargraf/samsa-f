@@ -80,9 +80,11 @@ end program samsa
 subroutine run_MP2()
   use module_energy, only : calc_Emp2
   use module_energy, only : Emp2     
-  use module_energy, only : Emp2frac 
+  use module_energy, only : Emp2f 
   use module_energy, only : E_OS,E_SS,E_SSx,E_SSc
   use module_energy, only : E_AAx,E_AAc,E_BBx,E_BBc
+  use module_energy, only : E_AAxf,E_AAcf,E_BBxf,E_BBcf
+  use module_energy, only : E_OSf
   use module_data,   only : Spins
   implicit none
 
@@ -117,13 +119,13 @@ subroutine run_MP2()
     write(*,*) "    Calculating UHF-MBPT(2) correlation energy (nOcc version)"
     write(*,*) "    "
     write(*,*) "    "
-    write(*,'("      E_OS   = ",F12.6)') E_OS
-    write(*,'("      E_AAx  = ",F12.6)') E_AAx
-    write(*,'("      E_AAc  = ",F12.6)') E_AAc
-    write(*,'("      E_BBx  = ",F12.6)') E_BBx
-    write(*,'("      E_BBc  = ",F12.6)') E_BBc
+    write(*,'("      E_OS   = ",F12.6)') E_OSf
+    write(*,'("      E_AAx  = ",F12.6)') E_AAxf
+    write(*,'("      E_AAc  = ",F12.6)') E_AAcf
+    write(*,'("      E_BBx  = ",F12.6)') E_BBxf
+    write(*,'("      E_BBc  = ",F12.6)') E_BBcf
     write(*,*) "    "
-    write(*,'("      EMP2   = ",F12.6)') Emp2frac
+    write(*,'("      EMP2   = ",F12.6)') Emp2f
     write(*,*) "    "
   endif
 
@@ -132,9 +134,11 @@ end subroutine run_MP2
 subroutine run_DCPT2()
   use module_energy, only : calc_Edcpt2
   use module_energy, only : Edcpt2
-  use module_energy, only : Edcpt2fr
+  use module_energy, only : Edcpt2f
   use module_energy, only : E_OS,E_SS,E_SSx,E_SSc
   use module_energy, only : E_AAx,E_AAc,E_BBx,E_BBc
+  use module_energy, only : E_AAxf,E_AAcf,E_BBxf,E_BBcf
+  use module_energy, only : E_OSf
   use module_data,   only : Spins
   implicit none
 
@@ -165,21 +169,19 @@ subroutine run_DCPT2()
     write(*,*) "    "
     write(*,'("      EDCPT2 = ",F12.6)') Edcpt2
 
-!    write(*,*) "    "
-!    write(*,*) "    "
-!    write(*,*) "    Calculating UHF-MBPT(2) correlation energy (nOcc version)"
-!    write(*,*) "    "
-!    write(*,*) "    "
-!    write(*,*) "    "
-!    write(*,*) "    "
-!    write(*,'("      E_OS  = ",F12.6)') E_OS
-!    write(*,'("      E_AAx = ",F12.6)') E_AAx
-!    write(*,'("      E_AAc = ",F12.6)') E_AAc
-!    write(*,'("      E_BBx = ",F12.6)') E_BBx
-!    write(*,'("      E_BBc = ",F12.6)') E_BBc
-!    write(*,*) "    "
-!    write(*,'("      EMP2  = ",F12.6)') Emp2frac
-!    write(*,*) "    "
+    write(*,*) "    "
+    write(*,*) "    "
+    write(*,*) "    Calculating UHF-DCPT(2) correlation energy (nOcc version)"
+    write(*,*) "    "
+    write(*,*) "    "
+    write(*,'("      E_OS  = ",F12.6)') E_OSf
+    write(*,'("      E_AAx = ",F12.6)') E_AAxf
+    write(*,'("      E_AAc = ",F12.6)') E_AAcf
+    write(*,'("      E_BBx = ",F12.6)') E_BBxf
+    write(*,'("      E_BBc = ",F12.6)') E_BBcf
+    write(*,*) "    "
+    write(*,'("      EDCPT2 = ",F12.6)') Edcpt2f
+    write(*,*) "    "
   endif
 
 end subroutine run_DCPT2

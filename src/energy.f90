@@ -7,11 +7,12 @@ module module_energy
   double precision                            :: Etot     = 0.0d0          
   double precision                            :: Eold     = 0.0d0 
   double precision                            :: Emp2     = 0.0d0
-  double precision                            :: Emp2frac = 0.0d0
+  double precision                            :: Emp2f    = 0.0d0
   double precision                            :: Edcpt2   = 0.0d0
-  double precision                            :: Edcpt2fr = 0.0d0
-  double precision                            :: E_OS,E_SS,E_SSx,E_SSc
+  double precision                            :: Edcpt2f  = 0.0d0
+  double precision                            :: E_OS,E_OSf,E_SS,E_SSx,E_SSc
   double precision                            :: E_AAx,E_AAc,E_BBx,E_BBc
+  double precision                            :: E_AAxf,E_AAcf,E_BBxf,E_BBcf
 
 contains
 
@@ -79,16 +80,6 @@ subroutine calc_Emp2
 
     Emp2 = E_OS + E_SS
 
-!    write(*,*) "    "
-!    write(*,*) "      E_OS  = ", E_OS
-!    write(*,*) "      E_SS  = ", E_SS
-!    write(*,*) "      E_SSx = ", E_SSx
-!    write(*,*) "      E_SSc = ", E_SSc
-!    write(*,*) "    "
-!    write(*,*) "      Emp2  = ", Emp2
-!    write(*,*) "    "
-
-
   elseif(spins==2)then
 !    write(*,*) "    "
 !    write(*,*) "    Calculating UHF-MBPT(2) correlation energy"
@@ -109,8 +100,6 @@ subroutine calc_Emp2
             E_OS  = E_OS  - (SMO(i,a,j,b)*SMO(i,a,j,b))/            &
                             (Eps((a+1)/2,1)+Eps((b/2),2)            &
                             -Eps((i+1)/2,1)-Eps((j/2),2))
-
-
           enddo
         enddo
       enddo
@@ -130,12 +119,10 @@ subroutine calc_Emp2
             E_AAx = E_AAx + (SMO(i,a,j,b)*SMO(i,b,j,a))*0.5d0/      &
                             (Eps((a+1)/2,1)+Eps((b+1)/2,1)          &
                             -Eps((i+1)/2,1)-Eps((j+1)/2,1))
-
           enddo
         enddo
       enddo
     enddo
-
 
     ! Same Spin BB
     do i=MOZero+1,nOccB*2,2
@@ -151,23 +138,12 @@ subroutine calc_Emp2
             E_BBx = E_BBx + (SMO(i,a,j,b)*SMO(i,b,j,a))*0.5d0/      &
                             (Eps((a/2),2)+Eps((b/2),2)              &
                             -Eps((i/2),2)-Eps((j/2),2))
-
           enddo
         enddo
       enddo
     enddo
 
     Emp2 = E_OS + E_AAc + E_AAx + E_BBx + E_BBc
-
-!    write(*,*) "    "
-!    write(*,*) "      E_OS  = ", E_OS
-!    write(*,*) "      E_AAx = ", E_AAx
-!    write(*,*) "      E_AAc = ", E_AAc
-!    write(*,*) "      E_BBx = ", E_BBx
-!    write(*,*) "      E_BBc = ", E_BBc
-!    write(*,*) "    "
-!    write(*,*) "      Emp2  = ", Emp2
-!    write(*,*) "    "
 
   endif
 
@@ -180,15 +156,12 @@ subroutine calc_Emp2
       MOZero = DropMO*2+1
     endif
 
-    Emp2frac = 0.0d0
-    E_OS     = 0.0d0
-    E_SS     = 0.0d0
-    E_SSx    = 0.0d0
-    E_SSc    = 0.0d0
-    E_AAx    = 0.0d0
-    E_AAc    = 0.0d0
-    E_BBx    = 0.0d0
-    E_BBc    = 0.0d0
+    Emp2f    = 0.0d0
+    E_OSf    = 0.0d0
+    E_AAxf   = 0.0d0
+    E_AAcf   = 0.0d0
+    E_BBxf   = 0.0d0
+    E_BBcf   = 0.0d0
 
     ! Opposite Spin 
     do i=MOZero,dim_1e*2-1,2
@@ -197,11 +170,10 @@ subroutine calc_Emp2
           do b=MOZero+1,dim_1e*2,2
             occ_factor = (Occ((i+1)/2,1)*(1-Occ((a+1)/2,1))*Occ(j/2,2)*(1-Occ(b/2,2)))
             if (occ_factor==0.0d0) cycle
-            E_OS  = E_OS  - (SMO(i,a,j,b)*SMO(i,a,j,b))*occ_factor/       &
+            if (a == b .or. i == j) cycle
+            E_OSf = E_OSf - (SMO(i,a,j,b)*SMO(i,a,j,b))*occ_factor/       &
                             (Eps((a+1)/2,1)+Eps((b/2),2)                &
                             -Eps((i+1)/2,1)-Eps((j/2),2))
-
-
           enddo
         enddo
       enddo
@@ -214,15 +186,15 @@ subroutine calc_Emp2
           do b=MOZero,dim_1e*2-1,2
             occ_factor = (Occ((i+1)/2,1)*(1-Occ((a+1)/2,1))*Occ((j+1)/2,1)*(1-Occ((b+1)/2,1)))
             if (occ_factor==0.0d0) cycle
-            E_AAc = E_AAc - (SMO(i,a,j,b)*SMO(i,a,j,b))*0.5d0*occ_factor/  &
-                            (Eps((a+1)/2,1)+Eps((b+1)/2,1)                 &
-                            -Eps((i+1)/2,1)-Eps((j+1)/2,1))
+            if (a == b .or. i == j) cycle
+            E_AAcf = E_AAcf- (SMO(i,a,j,b)*SMO(i,a,j,b))*0.5d0*occ_factor/  &
+                             (Eps((a+1)/2,1)+Eps((b+1)/2,1)                 &
+                             -Eps((i+1)/2,1)-Eps((j+1)/2,1))
 
 
-            E_AAx = E_AAx + (SMO(i,a,j,b)*SMO(i,b,j,a))*0.5d0*occ_factor/  &
-                            (Eps((a+1)/2,1)+Eps((b+1)/2,1)                 &
-                            -Eps((i+1)/2,1)-Eps((j+1)/2,1))
-
+            E_AAxf = E_AAxf+ (SMO(i,a,j,b)*SMO(i,b,j,a))*0.5d0*occ_factor/  &
+                             (Eps((a+1)/2,1)+Eps((b+1)/2,1)                 &
+                             -Eps((i+1)/2,1)-Eps((j+1)/2,1))
           enddo
         enddo
       enddo
@@ -236,34 +208,23 @@ subroutine calc_Emp2
           do b=MOZero+1,dim_1e*2,2
             occ_factor = (Occ(i/2,2)*(1-Occ(a/2,2))*Occ(j/2,2)*(1-Occ(b/2,2)))
             if (occ_factor==0.0d0) cycle
-            E_BBc = E_BBc - (SMO(i,a,j,b)*SMO(i,a,j,b))*0.5d0*occ_factor/  &
+            if (a == b .or. i == j) cycle
+            E_BBcf= E_BBcf- (SMO(i,a,j,b)*SMO(i,a,j,b))*0.5d0*occ_factor/  &
                             (Eps((a/2),2)+Eps((b/2),2)                     &
                             -Eps((i/2),2)-Eps((j/2),2))
 
 
-            E_BBx = E_BBx + (SMO(i,a,j,b)*SMO(i,b,j,a))*0.5d0*occ_factor/  &
+            E_BBxf= E_BBxf+ (SMO(i,a,j,b)*SMO(i,b,j,a))*0.5d0*occ_factor/  &
                             (Eps((a/2),2)+Eps((b/2),2)                     &
                             -Eps((i/2),2)-Eps((j/2),2))
-
           enddo
         enddo
       enddo
     enddo
 
-    Emp2frac = E_OS + E_AAc + E_AAx + E_BBx + E_BBc
-
-!    write(*,*) "    "
-!    write(*,*) "      E_OS  = ", E_OS
-!    write(*,*) "      E_AAx = ", E_AAx
-!    write(*,*) "      E_AAc = ", E_AAc
-!    write(*,*) "      E_BBx = ", E_BBx
-!    write(*,*) "      E_BBc = ", E_BBc
-!    write(*,*) "    "
-!    write(*,*) "      Emp2  = ", Emp2frac
-!    write(*,*) "    "
+    Emp2f = E_OSf + E_AAcf + E_AAxf + E_BBxf + E_BBcf
 
   endif
-
 
 end subroutine calc_Emp2
 
@@ -318,18 +279,8 @@ subroutine calc_Edcpt2
             Viajb = MOI(iajb) 
             Vibja = MOI(ibja)
 
-!            Edcpt2 = Edcpt2 + (Dabij - sqrt(Dabij*Dabij + 4.0d0*Vijab*Vijab))
-
-!            E_OS  = E_OS  - (MOI(iajb)*MOI(iajb))/                 
-
-!            E_SS  = E_SS  - (MOI(iajb)*(MOI(iajb)-MOI(ibja)))/     
-
-!            E_SSx = E_SSx + (MOI(iajb)*MOI(ibja))/                 
-
-!            E_SSc = E_SSc - (MOI(iajb)*MOI(iajb))/                 
-
             E_OS  = E_OS  + (Dabij - sqrt(Dabij*Dabij + 4.0d0*Viajb*Viajb))/2.0d0
-!
+
             E_SSc = E_SSc + (Dabij - sqrt(Dabij*Dabij + 4.0d0*Viajb*Viajb))/2.0d0
             E_SSx = E_SSx - (Dabij - sqrt(Dabij*Dabij + 4.0d0*Viajb*Vibja))/2.0d0
 
@@ -340,16 +291,6 @@ subroutine calc_Edcpt2
 
     E_SS   = E_SSx + E_SSc
     Edcpt2 = E_OS  + E_SS
-
-!    write(*,*) "    "
-!    write(*,*) "      E_OS  = ", E_OS
-!    write(*,*) "      E_SS  = ", E_SS
-!    write(*,*) "      E_SSx = ", E_SSx
-!    write(*,*) "      E_SSc = ", E_SSc
-!    write(*,*) "    "
-!    write(*,*) "      Edcpt2 = ", Edcpt2
-!    write(*,*) "    "
-
 
   elseif(spins==2)then
 !    write(*,*) "    "
@@ -367,9 +308,7 @@ subroutine calc_Edcpt2
       do a=nOccA*2+1,dim_1e*2-1,2
         do j=MOZero+1,nOccB*2,2
           do b=nOccB*2+2,dim_1e*2,2
-!            E_OS  = E_OS  - (SMO(i,a,j,b)*SMO(i,a,j,b))/            &
-!                            (Eps((a+1)/2,1)+Eps((b/2),2)            &
-!                            -Eps((i+1)/2,1)-Eps((j/2),2))
+
              Dabij = Eps((a+1)/2,1)+Eps((b/2),2)-Eps((i+1)/2,1)-Eps((j/2),2)
              Viajb = SMO(i,a,j,b)
 
@@ -391,17 +330,6 @@ subroutine calc_Edcpt2
 
             E_AAc = E_AAc + (Dabij - sqrt(Dabij*Dabij + 4.0d0*Viajb*Viajb))/4.0d0
             E_AAx = E_AAx - (Dabij - sqrt(Dabij*Dabij + 4.0d0*Viajb*Vibja))/4.0d0
-
-
-!            E_AAc = E_AAc - (SMO(i,a,j,b)*SMO(i,a,j,b))*0.5d0/      &
-!                            (Eps((a+1)/2,1)+Eps((b+1)/2,1)          &
-!                            -Eps((i+1)/2,1)-Eps((j+1)/2,1))
-
-
-!            E_AAx = E_AAx + (SMO(i,a,j,b)*SMO(i,b,j,a))*0.5d0/      &
-!                            (Eps((a+1)/2,1)+Eps((b+1)/2,1)          &
-!                            -Eps((i+1)/2,1)-Eps((j+1)/2,1))
-
           enddo
         enddo
       enddo
@@ -420,33 +348,12 @@ subroutine calc_Edcpt2
 
             E_BBc = E_BBc + (Dabij - sqrt(Dabij*Dabij + 4.0d0*Viajb*Viajb))/4.0d0
             E_BBx = E_BBx - (Dabij - sqrt(Dabij*Dabij + 4.0d0*Viajb*Vibja))/4.0d0
-
-!            E_BBc = E_BBc - (SMO(i,a,j,b)*SMO(i,a,j,b))*0.5d0/      &
-!                            (Eps((a/2),2)+Eps((b/2),2)              &
-!                            -Eps((i/2),2)-Eps((j/2),2))
-
-
-!            E_BBx = E_BBx + (SMO(i,a,j,b)*SMO(i,b,j,a))*0.5d0/      &
-!                            (Eps((a/2),2)+Eps((b/2),2)              &
-!                            -Eps((i/2),2)-Eps((j/2),2))
-
           enddo
         enddo
       enddo
     enddo
 
     Edcpt2 = E_OS + E_AAc + E_AAx + E_BBx + E_BBc
-
-!    write(*,*) "    "
-!    write(*,*) "      E_OS  = ", E_OS
-!    write(*,*) "      E_AAx = ", E_AAx
-!    write(*,*) "      E_AAc = ", E_AAc
-!    write(*,*) "      E_BBx = ", E_BBx
-!    write(*,*) "      E_BBc = ", E_BBc
-!    write(*,*) "    "
-!    write(*,*) "      Emp2  = ", Emp2
-!    write(*,*) "    "
-
   endif
 
   if(spins==2)then
@@ -458,15 +365,12 @@ subroutine calc_Edcpt2
       MOZero = DropMO*2+1
     endif
 
-    Edcpt2fr = 0.0d0
-!   E_OS     = 0.0d0
-!   E_SS     = 0.0d0
-!   E_SSx    = 0.0d0
-!   E_SSc    = 0.0d0
-!   E_AAx    = 0.0d0
-!   E_AAc    = 0.0d0
-!   E_BBx    = 0.0d0
-!   E_BBc    = 0.0d0
+    Edcpt2f  = 0.0d0
+    E_OSf    = 0.0d0
+    E_AAxf   = 0.0d0
+    E_AAcf   = 0.0d0
+    E_BBxf   = 0.0d0
+    E_BBcf   = 0.0d0
 
     ! Opposite Spin 
     do i=MOZero,dim_1e*2-1,2
@@ -475,11 +379,14 @@ subroutine calc_Edcpt2
           do b=MOZero+1,dim_1e*2,2
             occ_factor = (Occ((i+1)/2,1)*(1-Occ((a+1)/2,1))*Occ(j/2,2)*(1-Occ(b/2,2)))
             if (occ_factor==0.0d0) cycle
+            if (a == b .or. i == j) cycle
 !           E_OS  = E_OS  - (SMO(i,a,j,b)*SMO(i,a,j,b))*occ_factor/       &
 !                           (Eps((a+1)/2,1)+Eps((b/2),2)                &
 !                           -Eps((i+1)/2,1)-Eps((j/2),2))
+             Dabij = Eps((a+1)/2,1)+Eps((b/2),2)-Eps((i+1)/2,1)-Eps((j/2),2)
+             Viajb = SMO(i,a,j,b)
 
-
+             E_OSf = E_OSf+ (Dabij - sqrt(Dabij*Dabij + 4.0d0*Viajb*Viajb*occ_factor))/2.0d0
           enddo
         enddo
       enddo
@@ -492,6 +399,14 @@ subroutine calc_Edcpt2
           do b=MOZero,dim_1e*2-1,2
             occ_factor = (Occ((i+1)/2,1)*(1-Occ((a+1)/2,1))*Occ((j+1)/2,1)*(1-Occ((b+1)/2,1)))
             if (occ_factor==0.0d0) cycle
+            if (a == b .or. i == j) cycle
+            Dabij = Eps((a+1)/2,1)+Eps((b+1)/2,1)-Eps((i+1)/2,1)-Eps((j+1)/2,1)
+            Viajb = SMO(i,a,j,b)
+            Vibja = SMO(i,b,j,a)
+
+            E_AAcf= E_AAcf+ (Dabij - sqrt(Dabij*Dabij + 4.0d0*Viajb*Viajb*occ_factor))/4.0d0
+            E_AAxf= E_AAxf- (Dabij - sqrt(Dabij*Dabij + 4.0d0*Viajb*Vibja*occ_factor))/4.0d0
+
 !           E_AAc = E_AAc - (SMO(i,a,j,b)*SMO(i,a,j,b))*0.5d0*occ_factor/  &
 !                           (Eps((a+1)/2,1)+Eps((b+1)/2,1)                 &
 !                           -Eps((i+1)/2,1)-Eps((j+1)/2,1))
@@ -514,6 +429,14 @@ subroutine calc_Edcpt2
           do b=MOZero+1,dim_1e*2,2
             occ_factor = (Occ(i/2,2)*(1-Occ(a/2,2))*Occ(j/2,2)*(1-Occ(b/2,2)))
             if (occ_factor==0.0d0) cycle
+            if (a == b .or. i == j) cycle
+            Dabij = Eps((a/2),2)+Eps((b/2),2)-Eps((i/2),2)-Eps((j/2),2)
+            Viajb = SMO(i,a,j,b)
+            Vibja = SMO(i,b,j,a)
+
+            E_BBcf= E_BBcf+ (Dabij - sqrt(Dabij*Dabij + 4.0d0*Viajb*Viajb*occ_factor))/4.0d0
+            E_BBxf= E_BBxf- (Dabij - sqrt(Dabij*Dabij + 4.0d0*Viajb*Vibja*occ_factor))/4.0d0
+
 !           E_BBc = E_BBc - (SMO(i,a,j,b)*SMO(i,a,j,b))*0.5d0*occ_factor/  &
 !                           (Eps((a/2),2)+Eps((b/2),2)                     &
 !                           -Eps((i/2),2)-Eps((j/2),2))
@@ -528,17 +451,7 @@ subroutine calc_Edcpt2
       enddo
     enddo
 
-!   Edcpt2fr = E_OS + E_AAc + E_AAx + E_BBx + E_BBc
-
-!    write(*,*) "    "
-!    write(*,*) "      E_OS  = ", E_OS
-!    write(*,*) "      E_AAx = ", E_AAx
-!    write(*,*) "      E_AAc = ", E_AAc
-!    write(*,*) "      E_BBx = ", E_BBx
-!    write(*,*) "      E_BBc = ", E_BBc
-!    write(*,*) "    "
-!    write(*,*) "      Emp2  = ", Emp2frac
-!    write(*,*) "    "
+   Edcpt2f  = E_OSf+ E_AAcf+ E_AAxf+ E_BBxf+ E_BBcf
 
   endif
 

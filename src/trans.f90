@@ -38,7 +38,7 @@ subroutine trans_full
 
 ! pqrs -> pqrl
 !$ write(*,*) "      (in parallel)" !, OMP_NUM_THREADS
-  write(*,*) "      pqrs -> pqrl"
+  write(*,*) "      (pq|rs) -> (pq|rl)"
 !$OMP PARALLEL PRIVATE(p,q,r,s,pq,rs,pqrs)
 !$OMP DO
   do l=0,dimMO
@@ -72,7 +72,7 @@ subroutine trans_full
   in_pqkl = 0.0d0
 
   ! pqrl -> pqkl
-  write(*,*) "      pqrl -> pqkl"
+  write(*,*) "      (pq|rl) -> (pq|kl)"
 !$OMP PARALLEL PRIVATE(p,q,r,l)
 !$OMP DO
   do k=0,dimMO
@@ -103,7 +103,7 @@ subroutine trans_full
   in_pjkl = 0.0d0
 
   ! pqkl -> pjkl
-  write(*,*) "      pqkl -> pjkl"
+  write(*,*) "      (pq|kl) -> (pj|kl)"
 !$OMP PARALLEL PRIVATE(p,q,k,l)
 !$OMP DO
   do j=0,dimMO
@@ -134,7 +134,7 @@ subroutine trans_full
   in_ijkl = 0.0d0
 
   ! pjkl -> ijkl
-  write(*,*) "      pjkl -> ijkl"
+  write(*,*) "      (pj|kl) -> (ij|kl)"
 !$OMP PARALLEL PRIVATE(p,j,k,l)
 !$OMP DO
   do i=0,dimMO
@@ -167,7 +167,10 @@ subroutine trans_full
   if(spins == 1)then
     allocate(MOI(0:dim_2e-1))
 
-    ! sort integrals into 1D array
+! sort integrals into 1D array
+
+!$OMP PARALLEL PRIVATE(j,k,l,ij,kl,ijkl)
+!$OMP DO
     do i=0,dimAO
       do j=0,i
         call Index2e(i,j,ij)
@@ -180,11 +183,15 @@ subroutine trans_full
         enddo
       enddo
     enddo
+!$OMP END DO
+!$OMP END PARALLEL
 
   elseif(spins == 2)then
     dimMO = dim_1e*spins
     allocate(SMO(1:dimMO,1:dimMO,1:dimMO,1:dimMO))
 
+!$OMP PARALLEL PRIVATE(j,k,l)
+!$OMP DO
     do i=1,dimMO
       do j=1,dimMO
         do k=1,dimMO
@@ -194,6 +201,8 @@ subroutine trans_full
         enddo
       enddo
     enddo
+!$OMP END DO
+!$OMP END PARALLEL
 
   endif
     
@@ -205,7 +214,7 @@ subroutine trans_full
 !  call cpu_time(stoptime)
 !!$  call omp_get_wtime(stoptime)
 !  time = stoptime-starttime
-  write(*,*) "Integral transformation done in ",time," s"
+  write(*,*) "      Integral transformation done in ",time," s"
 
 end subroutine trans_full
 

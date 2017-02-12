@@ -30,6 +30,7 @@ module module_data
   logical                                       :: DoMP2 = .false.
   logical                                       :: DoEVPT2 = .false.
   logical                                       :: DoDrop = .true.
+  logical                                       :: DynDamp = .false.
   integer                                       :: Fract = 0 
   character(len=4)                              :: guess = "core"
   double precision                              :: Par(4) = 0.0d0
@@ -38,8 +39,10 @@ module module_data
 
 ! SCF matrices
   double precision, allocatable                 :: Fock(:,:,:)  
+  double precision, allocatable                 :: Fockold(:,:,:)
   double precision, allocatable                 :: Coef(:,:,:)  
   double precision, allocatable                 :: Dens(:,:,:)  
+  double precision, allocatable                 :: Densold(:,:,:)
   double precision, allocatable                 :: Eps(:,:)           
   double precision, allocatable                 :: Hcore(:,:)       
   double precision, allocatable                 :: Occ(:,:)
@@ -74,7 +77,7 @@ subroutine read_input()
   call allocate_geo
 
   write(*,*) ""
-  write(*,*) "  Keywords:"
+  write(*,*) "  Keywords: "
   write(*,*) ""
 
   read(10,'(A)') keywords
@@ -97,10 +100,12 @@ subroutine read_input()
 
   close(10)
 
-  write(*,*) ""
-  write(*,*) "  Number of atoms = ", natoms
-  write(*,*) "  Charge          = ", charge
-  write(*,*) "  Mutiplicity     = ", mult
+  call print_options()
+
+! write(*,*) ""
+! write(*,*) "    Number of atoms = ", natoms
+! write(*,*) "    Charge          = ", charge
+! write(*,*) "    Mutiplicity     = ", mult
   write(*,*) ""
 
   write(*,*) ""
@@ -131,19 +136,21 @@ subroutine allocate_SCFmat()
   implicit none
 
   write(*,*) ""
-  write(*,*) "  allocating matrices..."
+  write(*,*) "    Allocating matrices..."
   write(*,*) ""
 
-  allocate(Fock(dim_1e,dim_1e,spins),  &
-           Coef(dim_1e,dim_1e,spins),  &
-           Dens(dim_1e,dim_1e,spins),  &
-           Eps(dim_1e,spins),          &
-           Hcore(dim_1e,dim_1e),       &
-           S12(dim_1e,dim_1e),         &
-           Sij(dim_1e,dim_1e),         &
-           Vij(dim_1e,dim_1e),         &
-           Tij(dim_1e,dim_1e),         &
-           ERI(dim_2e)                 &
+  allocate(Fock(dim_1e,dim_1e,spins),    &
+           Fockold(dim_1e,dim_1e,spins), &
+           Coef(dim_1e,dim_1e,spins),    &
+           Dens(dim_1e,dim_1e,spins),    &
+           Densold(dim_1e,dim_1e,spins), &
+           Eps(dim_1e,spins),            &
+           Hcore(dim_1e,dim_1e),         &
+           S12(dim_1e,dim_1e),           &
+           Sij(dim_1e,dim_1e),           &
+           Vij(dim_1e,dim_1e),           &
+           Tij(dim_1e,dim_1e),           &
+           ERI(dim_2e)                   &
           )
 
 end subroutine allocate_SCFmat
@@ -280,8 +287,8 @@ subroutine dimensions()
   enddo
 
   write(*,*) ""
-  write(*,*) "  1e Dimension      = ", dim_1e
-  write(*,*) "  2e Dimension      = ", dim_2e
+  write(*,*) "    1e Dimension      = ", dim_1e
+  write(*,*) "    2e Dimension      = ", dim_2e
 
 ! Number of electrons
   nel = 0
@@ -344,9 +351,9 @@ subroutine dimensions()
     call print_SVec(Occ(:,:),dim_1e,18,"Occupation Numbers")
   endif
 
-  write(*,*) "  No of electrons   = ", nel 
-  write(*,*) "  No of occ orbs(A) = ", noccA 
-  write(*,*) "  No of occ orbs(B) = ", noccB
+  write(*,*) "    No of electrons   = ", nel 
+  write(*,*) "    No of occ orbs(A) = ", noccA 
+  write(*,*) "    No of occ orbs(B) = ", noccB
   write(*,*) ""
 
 end subroutine dimensions
@@ -365,7 +372,7 @@ subroutine basis_types()
         iBas = iBas + 1
         Bastype(iBas) = 1
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
       elseif((atom(i) == "Li") .or. &
              (atom(i) == "Be") .or. &
              (atom(i) == "B")  .or. &
@@ -377,23 +384,23 @@ subroutine basis_types()
         iBas = iBas + 1
         Bastype(iBas) = 1
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 2
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
       elseif((atom(i) == "Na") .or. &
              (atom(i) == "Mg") .or. &
              (atom(i) == "Al") .or. &
@@ -412,72 +419,72 @@ subroutine basis_types()
         iBas = iBas + 1
         Bastype(iBas) = 1
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 1
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
       elseif((atom(i) == "He"))then
 !       2 1S 1 2P
         iBas = iBas + 1
         Bastype(iBas) = 1
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 2
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
       elseif((atom(i) == "Li") .or. &
              (atom(i) == "Be"))then
 !       1 1S 2 2S 2 2P
         iBas = iBas + 1
         Bastype(iBas) = 1
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 2
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 2
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
       elseif((atom(i) == "B")  .or. &
              (atom(i) == "C")  .or. &
              (atom(i) == "N")  .or. &
@@ -488,59 +495,59 @@ subroutine basis_types()
         iBas = iBas + 1
         Bastype(iBas) = 1
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 2
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 2
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 4
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 4
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 4
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 4
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 4
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
       elseif((atom(i) == "Na"))then
 !       Nothing
       elseif((atom(i) == "Mg") .or. &
@@ -560,189 +567,189 @@ subroutine basis_types()
         iBas = iBas + 1
         Bastype(iBas) = 1
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 1
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 1
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
       elseif((atom(i) == "He"))then
 !       2 1S 1 2P
         iBas = iBas + 1
         Bastype(iBas) = 1
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 1
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 1
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
       elseif((atom(i) == "Li"))then
 !       2 1S 3 2S 3 2P
         iBas = iBas + 1
         Bastype(iBas) = 1
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 1
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 2
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 2
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 2
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
       elseif((atom(i) == "Be"))then
 !       2 1S 3 2S 3 2P 1 3D
         iBas = iBas + 1
         Bastype(iBas) = 1
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 1
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 2
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 2
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 2
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 4
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 4
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 4
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 4
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 4
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
       elseif((atom(i) == "B")  .or. &
              (atom(i) == "C")  .or. &
              (atom(i) == "N")  .or. &
@@ -753,127 +760,127 @@ subroutine basis_types()
         iBas = iBas + 1
         Bastype(iBas) = 1
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 1
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 2
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 2
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 2
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 3
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 4
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 4
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 4
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 4
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 4
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 4
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 4
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 4
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 4
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 4
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 5
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 5
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 5
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 5
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 5
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 5
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
         iBas = iBas + 1
         Bastype(iBas) = 5
         Basis(iBas) = i
-        write(*,*) "Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
+        write(*,*) "    Basisfunction ", iBas, " on atom ", i, " is type ", Bastype(iBas)
       elseif((atom(i) == "Na"))then
 !       Nothing
       elseif((atom(i) == "Mg") .or. &
@@ -891,6 +898,34 @@ subroutine basis_types()
 end subroutine basis_types
 
 
+!#############################################
+!#              Print Options
+!#############################################
+subroutine print_options()
+  implicit none
+
+  write(*,'("    Calc    = ",A12)')      CalcType
+  write(*,'("    Guess   = ",A12)')      Guess
+  write(*,'("    Basis   = ",A12)')      Basis_Set
+
+  write(*,'("    DoDamp  = ",L12)')      DoDamp
+  write(*,'("    DoMP2   = ",L12)')      doMP2
+  write(*,'("    doEVPT2 = ",L12)')      doEVPT2
+  write(*,'("    doDrop  = ",L12)')      doDrop
+
+  write(*,'("    Charge  = ",I12)')      Charge
+  write(*,'("    Mult    = ",I12)')      Mult
+  write(*,'("    MaxSCF  = ",I12)')      MaxSCF
+  write(*,'("    SemiTyp = ",I12)')      ScaleType
+  write(*,'("    Fract   = ",I12)')      Fract
+
+  write(*,'("    Econv   = ",F12.6)')    Econv
+  write(*,'("    Dconv   = ",F12.6)')    Dconv
+  write(*,'("    Damping = ",F12.6)')    Damp
+  write(*,'("    Para    = ",4(F12.6))') Par(1),Par(2),Par(3),Par(4)
+
+end subroutine print_options
+
 
 !#############################################
 !#              Parse Options
@@ -904,40 +939,40 @@ subroutine parse_option(argument)
 
   if(uargument(1:7)=='CHARGE=')then
     read(UArgument(8:),*) charge
-    write(*,*) '    CHARGE    = ', charge
+!   write(*,*) '    CHARGE    = ', charge
 
   elseif(uargument(1:5)=='MULT=')then
     read(UArgument(6:),*) mult
-    write(*,*) '    MULT      = ', mult
+!    write(*,*) '    MULT      = ', mult
 
   elseif(uargument(1:5)=='CALC=')then
     read(UArgument(6:),*) calctype
-    write(*,*) '    CALC      = ', calctype
+!    write(*,*) '    CALC      = ', calctype
 
   elseif(uargument(1:7)=='MAXSCF=')then
     read(UArgument(8:),*) maxSCF
-    write(*,*) '    MAXSCF    = ', maxSCF
+!    write(*,*) '    MAXSCF    = ', maxSCF
 
   elseif(uargument(1:6)=='ECONV=')then
     read(UArgument(7:),*) Econv
-    write(*,*) '    ECONV     = ', Econv
+!    write(*,*) '    ECONV     = ', Econv
 
   elseif(uargument(1:6)=='DCONV=')then
     read(UArgument(7:),*) Dconv
-    write(*,*) '    DCONV     = ', Dconv
+!    write(*,*) '    DCONV     = ', Dconv
 
   elseif(uargument(1:5)=='DAMP=')then
     read(UArgument(6:),*) DAMP
     DoDamp = .true.
-    write(*,*) '    DAMP      = ',DAMP
+!    write(*,*) '    DAMP      = ',DAMP
 
   elseif(uargument(1:7)=='DODAMP=')then
     if(uargument(8:9)=='ON')then
       DoDamp = .true.
-      write(*,*) '    Damping turned on'
+!      write(*,*) '    Damping turned on'
     elseif(uargument(8:10)=='OFF')then
       DoDamp = .false.
-      write(*,*) '    Damping turned off'
+!      write(*,*) '    Damping turned off'
     else
       write(*,*) "    Unknown Argument :", uargument
     endif
@@ -945,10 +980,10 @@ subroutine parse_option(argument)
   elseif(uargument(1:6)=='GUESS=')then
     if(uargument(7:10)=='CORE')then
       guess = "core"
-      write(*,*) '    GUESS     = CORE'
+!      write(*,*) '    GUESS     = CORE'
     elseif(uargument(7:12)=='HUCKEL')then
       guess = "huck"
-      write(*,*) '    GUESS     = HUCK'
+!      write(*,*) '    GUESS     = HUCK'
     else
       write(*,*) "    Unknown Argument :", uargument
     endif
@@ -956,56 +991,56 @@ subroutine parse_option(argument)
   elseif(uargument(1:6)=='BASIS=')then
     if(uargument(7:10)=='MIN')then
       basis_set = "min"
-      write(*,*) '    BASIS     = MIN'
+!      write(*,*) '    BASIS     = MIN'
     elseif(uargument(7:10)=='SVP')then
       basis_set = "svp"
-      write(*,*) '    BASIS     = SVP'
+!      write(*,*) '    BASIS     = SVP'
     elseif(uargument(7:10)=='TZP')then
       basis_set = "tzp"
-      write(*,*) '    BASIS     = TZP'
+!      write(*,*) '    BASIS     = TZP'
     else
       write(*,*) "    Unknown Argument :", uargument
     endif
 
   elseif(uargument(1:5)=='PAR1=')then
     read(UArgument(6:),*) Par(1)
-    write(*,*) '    PAR1      = ',Par(1)
+!    write(*,*) '    PAR1      = ',Par(1)
 
   elseif(uargument(1:5)=='PAR2=')then
     read(UArgument(6:),*) Par(2)
-    write(*,*) '    PAR2      = ',Par(2)
+!    write(*,*) '    PAR2      = ',Par(2)
 
   elseif(uargument(1:5)=='PAR3=')then
     read(UArgument(6:),*) Par(3)
-    write(*,*) '    PAR3      = ',Par(3)
+!    write(*,*) '    PAR3      = ',Par(3)
 
   elseif(uargument(1:5)=='PAR4=')then
     read(UArgument(6:),*) Par(4)
-    write(*,*) '    PAR4      = ',Par(4)
+!    write(*,*) '    PAR4      = ',Par(4)
 
   elseif(uargument(1:5)=='SCAL=')then
     read(UArgument(6:),*) scaletype
-    write(*,*) '    SCAL      = ',scaletype
+!    write(*,*) '    SCAL      = ',scaletype
 
   elseif(uargument(1:5)=='MBPT2')then
     doMP2 = .true.
-    write(*,*) '    MBPT(2) '
+!    write(*,*) '    MBPT(2) '
 
   elseif(uargument(1:6)=='FRACT=')then
     read(UArgument(7:),*) Fract
-    write(*,*) '    FRACT     = ',Fract
+!    write(*,*) '    FRACT     = ',Fract
 
   elseif(uargument(1:5)=='EVPT2')then
     doEVPT2 = .true.
-    write(*,*) '    EVPT(2) '
+!    write(*,*) '    EVPT(2) '
 
   elseif(uargument(1:4)=='DROP')then
     doDrop = .true.
-    write(*,*) '    Dropping core'
+!    write(*,*) '    Dropping core'
 
   elseif(uargument(1:6)=='NODROP')then
     doDrop = .false.
-    write(*,*) '    Not dropping core'
+!    write(*,*) '    Not dropping core'
 
   else
     write(*,*) "    Unknown Argument :", uargument

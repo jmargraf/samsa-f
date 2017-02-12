@@ -13,7 +13,7 @@ subroutine calc_Ints()
   character(len=1024)       :: dir
 
   write(*,*) ""
-  write(*,*) "  Running Psi4 integral package ..."
+  write(*,*) "    Running Psi4 integral package ..."
   write(*,*) ""
 
   call get_environment_variable("SAMSA_DIR",dir)
@@ -47,7 +47,7 @@ subroutine calc_Overlap()
   double precision            :: temp
   character(len=32)           :: scratch  
 
-  write(*,*) "     ... fetching Sij "
+  write(*,*) "    ... fetching Sij "
 
   open(20,file=trim(filename),status='old',action='read')
 
@@ -80,7 +80,7 @@ subroutine calc_Kinetic()
   double precision            :: temp
   character(len=32)           :: scratch
 
-  write(*,*) "     ... fetching Tij "
+  write(*,*) "    ... fetching Tij "
 
   open(30,file=trim(filename),status='old',action='read')
 
@@ -114,7 +114,7 @@ subroutine calc_CoreEl()
   double precision            :: temp
   character(len=32)           :: scratch
 
-  write(*,*) "     ... fetching Vij "
+  write(*,*) "    ... fetching Vij "
 
   open(40,file=trim(filename),status='old',action='read')
 
@@ -144,7 +144,7 @@ subroutine calc_Hcore()
   use module_data,        only : Hcore,Tij,Vij
   implicit none
 
-  write(*,*) "     ... calc'ing Hcore "
+  write(*,*) "    ... calc'ing Hcore "
 
   Hcore = Tij + Vij
 
@@ -165,7 +165,7 @@ subroutine calc_ERI()
   double precision            :: temp
   character(len=32)           :: scratch
 
-  write(*,*) "     ... fetching ERI "
+  write(*,*) "    ... fetching ERI "
 
   open(50,file=trim(filename),status='old',action='read')
 
@@ -223,7 +223,7 @@ subroutine get_Occ()
 !  character(len=32)           :: scratch
 
   write(*,*) ""
-  write(*,*) "     ... fetching user defined occupation numbers "
+  write(*,*) "    ... fetching user defined occupation numbers "
   write(*,*) ""
 
   open(90,file=trim(filename),status='old',action='read')

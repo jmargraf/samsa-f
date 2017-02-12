@@ -18,9 +18,9 @@ subroutine run_SCF
   integer                  :: iSCF
 
   write(*,*) ""
-  write(*,*) "   Starting SCF ..."
+  write(*,*) "    starting SCF ..."
   write(*,*) ""
-  write(*,*) "        #           Etot                 dE                  Drmsd      Damp"
+  write(*,*) "          #           Etot                 dE                  Drmsd      Damp"
 
   do iSCF=1,MaxSCF
 
@@ -36,10 +36,12 @@ subroutine run_SCF
 
     call calc_Energy()
 
+!    call calc_DynDamp()
+
     dE = Etot - Eold     
 
     !  iSCF   Etot  dE   Drmsd
-    write(*,'("SCF  ",I5,"  ",3(F18.10,"  "),F5.2)') iSCF, Etot, dE, Drmsd, Damp
+    write(*,'("  SCF  ",I5,"  ",3(F18.10,"  "),F5.2)') iSCF, Etot, dE, Drmsd, Damp
 
     call check_Conv()
 
@@ -49,8 +51,8 @@ subroutine run_SCF
 
   enddo
 
-  write(*,*) "         Eelec=",Eelec
-  write(*,*) "    Final Etot=",Etot
+  write(*,*) "         Eelec =",Eelec
+  write(*,*) "    Final Etot =",Etot
 
 !  call Fock_to_MO()
 !  call Fock_to_AO()
@@ -67,7 +69,7 @@ subroutine recalc_WF()
   integer                  :: iSCF
 
   write(*,*) ""
-  write(*,*) "   non-SCF recalculation of WF ..."
+  write(*,*) "    non-SCF recalculation of WF ..."
   write(*,*) ""
 
   Eold = Etot
@@ -89,7 +91,7 @@ subroutine recalc_WF()
   dE = Etot - Eold
 
   !  iSCF   Etot  dE   Drmsd
-  write(*,'("Modified WF:  ","  ",2(F18.10,"  "))') Etot, dE 
+  write(*,'("    Modified WF:  ","  ",2(F18.10,"  "))') Etot, dE 
 
 ! write(*,*) "         Eelec=",Eelec
 ! write(*,*) "    Final Etot=",Etot
@@ -108,7 +110,7 @@ subroutine Fock_to_MO()
   double precision, allocatable   :: temp(:,:)
 
   write(*,*) ""
-  write(*,*) "   transform Fockian to MO-basis ..."
+  write(*,*) "    transform Fockian to MO-basis ..."
   write(*,*) ""
 
   allocate(temp(dim_1e,dim_1e))
@@ -145,7 +147,7 @@ subroutine Fock_to_AO()
   double precision, allocatable   :: temp3(:,:)
 
   write(*,*) ""
-  write(*,*) "   transform Fockian to AO-basis ..."
+  write(*,*) "    transform Fockian to AO-basis ..."
   write(*,*) ""
 
   allocate(temp1(dim_1e,dim_1e))
@@ -193,11 +195,11 @@ subroutine do_guess()
 !  write(*,*) "    Initial guess..."
 !  write(*,*) ""
 
-  write(*,*) "guess = ", guess
+!  write(*,*) "guess = ", guess
 
   if(guess == "core")then
     write(*,*) ""
-    write(*,*) "    Initial guess..."
+    write(*,*) "    Core initial guess..."
     write(*,*) ""
     do i=1,Spins
       Fock(:,:,i) = Hcore(:,:)
@@ -228,7 +230,7 @@ subroutine guess_huckel()
   double precision              :: Par_ii(8,3)
 
   write(*,*) ""
-  write(*,*) "      Extended Hückel..."
+  write(*,*) "    Extended Hückel guess..."
   write(*,*) ""
 
 !  allocate(Hii(dim_1e))
@@ -291,13 +293,13 @@ end subroutine guess_huckel
 !#############################################
 subroutine calc_Fock()
   use module_data, only      : Dens,Fock,Spins,dim_1e,ERI,Hcore
-  use module_data, only      : DoDamp, Damp,Sij,Par,Bastype,scaletype
+  use module_data, only      : Sij,Par,Bastype,scaletype,Fockold
   use module_io, only        : print_Mat
   implicit none
   integer                         :: iSpin,i,j,k,l
   integer                         :: ij,kl,ijkl
   integer                         :: ik,jl,ikjl
-  double precision, allocatable   :: Fockold(:,:,:)
+!  double precision, allocatable   :: Fockold(:,:,:)
   double precision                :: ScaleFactor=1.0d0
   double precision                :: AddFactor=0.0d0
   double precision                :: TempPar
@@ -306,7 +308,7 @@ subroutine calc_Fock()
 !  write(*,*) "    Build new Fock..."
 !  write(*,*) ""
 
-  allocate(Fockold(dim_1e,dim_1e,Spins))
+!  allocate(Fockold(dim_1e,dim_1e,Spins))
 
   Fockold = Fock
 
@@ -314,6 +316,9 @@ subroutine calc_Fock()
     Fock(1:dim_1e,1:dim_1e,iSpin) = Hcore(1:dim_1e,1:dim_1e)
   enddo
 
+!$OMP PARALLEL PRIVATE(j,k,l,ij,kl,ik,jl,ijkl,ikjl,iSpin, &
+!$OMP                  TempPar,ScaleFactor,AddFactor )
+!$OMP DO
   do i=0,dim_1e-1
     do j=0,dim_1e-1
       do k=0,dim_1e-1
@@ -421,17 +426,19 @@ subroutine calc_Fock()
 
     enddo
   enddo
+!$OMP END DO
+!$OMP END PARALLEL
 
   ! Damping    
-  if(DoDamp)then
-    Fock = Damp*Fock + (1.0d0-Damp)*Fockold
-  endif
+!  if(DoDamp)then
+!    Fock = Damp*Fock + (1.0d0-Damp)*Fockold
+!  endif
 
-  do iSpin=1,Spins
+!  do iSpin=1,Spins
 !    call print_Mat(Fock(:,:,iSpin),dim_1e,4,"Fock")
-  enddo
+!  enddo
 
-  deallocate(Fockold)
+!  deallocate(Fockold)
 
 end subroutine calc_Fock
 
@@ -440,14 +447,14 @@ end subroutine calc_Fock
 !#         Calculate Density Matrix 
 !#############################################
 subroutine calc_Dens()
-  use module_data, only      : Dens,Coef,Spins,dim_1e
-  use module_data, only      : noccA,noccB,Occ
+  use module_data, only      : Dens,Coef,Spins,dim_1e,Densold
+  use module_data, only      : noccA,noccB,Occ,DoDamp,Damp,DynDamp
   use module_io, only        : print_Mat
   implicit none
   integer                         :: iSpin,i,j,k,l
-  double precision, allocatable   :: Densold(:,:,:)
+!  double precision, allocatable   :: Densold(:,:,:)
 
-  allocate(Densold(dim_1e,dim_1e,Spins))
+!  allocate(Densold(dim_1e,dim_1e,Spins))
   Drmsd = 0.0d0
   Densold = Dens
 
@@ -496,11 +503,66 @@ subroutine calc_Dens()
 !    call print_Mat(Dens(:,:,iSpin),dim_1e,5,"DensX")
   enddo
 
-  Drmsd = sqrt(Drmsd/dble(dim_1e*dim_1e*Spins))
+  ! Damping    
+  if(DoDamp)then
+    Dens = Damp*Dens + (1.0d0-Damp)*Densold
+!    call calc_DynDamp()
+  elseif(DynDamp)then
+    call calc_DynDamp()
+    Dens = Damp*Dens + (1.0d0-Damp)*Densold
+  endif
 
+  Drmsd = sqrt(Drmsd/dble(dim_1e*dim_1e*Spins))
 
 end subroutine calc_Dens
 
+
+!#############################################
+!#       Calculate Dynamic Damping Factor
+!#############################################
+subroutine calc_DynDamp()
+  use module_data, only      : Fock,Coef,S12,dim_1e,Spins,Occ
+  use module_data, only      : Dens,Densold,Hcore,Fockold,Damp
+  implicit none
+  double precision          :: E1a, E2a, E1b, E2b, E2ab, temp,tempa,tempb
+  integer                   :: i,j,iSpin
+
+  E1a  = 0.0d0
+  E1b  = 0.0d0
+  E2a  = 0.0d0
+  E2b  = 0.0d0
+  E2ab = 0.0d0
+
+!        Eelec = Eelec + Dens(i,j,iSpin)                &
+!                      *(Hcore(i,j) + Fock(i,j,iSpin))  &
+!                      *(1.0d0/dble(Spins))
+
+  do iSpin=1,Spins
+    do i=1,dim_1e
+      do j=1,dim_1e
+        E1a   = E1a + Dens(i,j,iSpin)*(Hcore(i,j)*(1.0d0/dble(Spins)))
+        E2a   = E2a + Dens(i,j,iSpin)*((Fock(i,j,iSpin))*(1.0d0/dble(Spins)))
+
+        E1b   = E1b + Densold(i,j,iSpin)*(Hcore(i,j)*(1.0d0/dble(Spins)))
+        E2b   = E2b + Densold(i,j,iSpin)*((Fockold(i,j,iSpin))*(1.0d0/dble(Spins)))
+
+        E2ab  = E2ab + Dens(i,j,iSpin)*((Fockold(i,j,iSpin))*(1.0d0/dble(Spins)))
+
+      enddo
+    enddo
+  enddo
+
+
+  tempa = E1a + E2a
+  tempb = E1b + E2b
+  temp  = (E1a-E1b+E2ab-2.0d0*E2b)/(4.0d0*E2ab-2.0d0*E2a-2.0d0*E2b)
+  damp = min(abs(temp),1.0d0)
+
+!  write(*,*) E1a,"-",E1b,"+",E2ab,"-2",E2b
+!  write(*,*) "4",E2ab,"-2",E2a,"-2",E2b
+!  write(*,*) tempa,tempb,E2ab,temp 
+
+end subroutine calc_DynDamp
 
 
 !#############################################

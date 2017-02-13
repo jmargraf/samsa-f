@@ -26,6 +26,7 @@ module module_data
   double precision                              :: Econv = 1.0d-9
   double precision                              :: Dconv = 1.0d-9
   double precision                              :: Damp = 0.5d0
+  double precision                              :: DampTol = 1.0d-7
   logical                                       :: DoDamp = .true.
   logical                                       :: DoMBPT2 = .false.
   logical                                       :: DoDCPT2 = .false.
@@ -971,6 +972,10 @@ subroutine parse_option(argument)
     read(UArgument(6:),*) DAMP
     DoDamp = .true.
 !    write(*,*) '    DAMP      = ',DAMP
+
+  elseif(uargument(1:8)=='DAMPTOL=')then
+    read(UArgument(9:),*) DAMPTOL
+    DoDamp = .true.
 
   elseif(uargument(1:7)=='DODAMP=')then
     if(uargument(8:9)=='ON')then

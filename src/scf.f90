@@ -133,7 +133,7 @@ end subroutine recalc_WF
 subroutine check_Conv()
   use module_data,      only : Econv 
   use module_data,      only : Dconv 
-  use module_data,      only : DoDamp, Damp
+  use module_data,      only : DoDamp, Damp,DampTol
   use module_energy,    only : Eelec, Etot
   use module_wavefun,   only : Drmsd
   implicit none
@@ -145,7 +145,7 @@ subroutine check_Conv()
     write(*,*) "    Damping set to 0.7"
   endif
 
-  if(abs(dE) < 1.0d-5 .and. Damp /= 1.0d0  & 
+  if(abs(dE) < DampTol .and. Damp /= 1.0d0  & 
                       .and. DoDamp)then
     Damp = 1.0d0
     DoDamp =.false.

@@ -22,18 +22,21 @@ sub readxyz{
   my $m;
   my $ang2bohr=1.889725989;
 
-  open(IN,"<","$::name.xyz");
+  open(IN,"<","$::name.inp");
+
+# Skip keyword line
+  $scratch=<IN> ;
 
 # Read number of Atoms to $natoms
   $::natoms=<IN> ;
   chomp $::natoms ;
 
 # Read Charge + Mult
-  $scratch=<IN> ;
-  chomp $scratch ;
-  @temp =split / +/, $scratch ;
-  $charge = $temp[0];
-  $mult   = $temp[1];
+#  $scratch=<IN> ;
+#  chomp $scratch ;
+#  @temp =split / +/, $scratch ;
+#  $charge = $temp[0];
+#  $mult   = $temp[1];
 
 # Read  $natoms coordinates to xyz
   for($m=1;$m<=$natoms;$m++){

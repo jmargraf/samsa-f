@@ -57,7 +57,7 @@ subroutine run_SCF
 
     call calc_Fock()
 
-    if(doSCGKT .and. iSCF>10)then
+    if(doSCGKT .and. abs(dE)<1.0d-10)then
       call Fock_to_MO()
       call SemiCanonical()
       call Fock_to_AO()

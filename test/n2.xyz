@@ -1,5 +1,5 @@
 2
-charge=0 mult=1 calc=uhf basis=svp econv=1e-12 mbpt2 evpt2 drop 
+charge=0 mult=1 calc=uhf basis=svp econv=1e-12 dconv=1e-12 mbpt2 drop gkt nosingles 
 N 0.000000000000000 0.000000000000000 0.548555677968566
 N 0.000000000000000 0.000000000000000 -0.548555677968566
 

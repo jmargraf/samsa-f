@@ -191,6 +191,7 @@ subroutine run_corrF(doprint)
 
   do iSpin=1,Spins
     do i=1,dim_1e
+      if(Occ(i,iSpin)==0.0d0)cycle
       Fock(i,i,iSpin) = Fock(i,i,iSpin) + dEV(i,iSpin)*Occ(i,iSpin)
     enddo
   enddo

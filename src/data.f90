@@ -27,10 +27,13 @@ module module_data
   double precision                              :: Dconv = 1.0d-9
   double precision                              :: Damp = 0.5d0
   logical                                       :: DoDamp = .true.
-  logical                                       :: DoMP2 = .false.
-  logical                                       :: DoEVPT2 = .false.
+  logical                                       :: DoMBPT2 = .false.
+  logical                                       :: DoDCPT2 = .false.
+  logical                                       :: DoGKT = .false.
+  logical                                       :: DoSingles = .true.
   logical                                       :: DoDrop = .true.
   logical                                       :: DynDamp = .false.
+  logical                                       :: doSCGKT = .false.
   integer                                       :: Fract = 0 
   character(len=4)                              :: guess = "core"
   double precision                              :: Par(4) = 0.0d0
@@ -909,8 +912,8 @@ subroutine print_options()
   write(*,'("    Basis   = ",A12)')      Basis_Set
 
   write(*,'("    DoDamp  = ",L12)')      DoDamp
-  write(*,'("    DoMP2   = ",L12)')      doMP2
-  write(*,'("    doEVPT2 = ",L12)')      doEVPT2
+  write(*,'("    DoMBPT2 = ",L12)')      doMBPT2
+  write(*,'("    doGKT   = ",L12)')      doGKT
   write(*,'("    doDrop  = ",L12)')      doDrop
 
   write(*,'("    Charge  = ",I12)')      Charge
@@ -1023,16 +1026,20 @@ subroutine parse_option(argument)
 !    write(*,*) '    SCAL      = ',scaletype
 
   elseif(uargument(1:5)=='MBPT2')then
-    doMP2 = .true.
+    doMBPT2 = .true.
+!    write(*,*) '    MBPT(2) '
+
+  elseif(uargument(1:5)=='DCPT2')then
+    doDCPT2 = .true.
 !    write(*,*) '    MBPT(2) '
 
   elseif(uargument(1:6)=='FRACT=')then
     read(UArgument(7:),*) Fract
 !    write(*,*) '    FRACT     = ',Fract
 
-  elseif(uargument(1:5)=='EVPT2')then
-    doEVPT2 = .true.
-!    write(*,*) '    EVPT(2) '
+  elseif(uargument(1:5)=='GKT')then
+    doGKT = .true.
+!    write(*,*) '    GKT '
 
   elseif(uargument(1:4)=='DROP')then
     doDrop = .true.
@@ -1040,6 +1047,14 @@ subroutine parse_option(argument)
 
   elseif(uargument(1:6)=='NODROP')then
     doDrop = .false.
+!    write(*,*) '    Not dropping core'
+
+  elseif(uargument(1:9)=='NOSINGLES')then
+    doSingles = .false.
+!    write(*,*) '    Not dropping core'
+
+  elseif(uargument(1:6)=='SCGKT')then
+    doSCGKT = .true.
 !    write(*,*) '    Not dropping core'
 
   else

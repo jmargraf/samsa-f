@@ -1,15 +1,16 @@
 program samsa
-  use module_data,   only : mol_name,exe_path
-  use module_data,   only : read_input
-  use module_data,   only : dimensions
-  use module_data,   only : allocate_SCFmat 
-  use module_data,   only : doMP2,Fract,doEVPT2
-  use module_energy, only : calc_Enuc,calc_Emp2
-  use module_ints,   only : calc_Ints,get_Occ
-  use module_scf,    only : do_guess,dia_S,run_SCF
-  use module_props,  only : print_Eigen
-  use module_trans,  only : trans_full,transdone
-  use module_occupy, only : calc_EVPT2
+  use module_data,    only : mol_name,exe_path
+  use module_data,    only : read_input
+  use module_data,    only : dimensions
+  use module_data,    only : allocate_SCFmat 
+  use module_data,    only : doMBPT2,doDCPT2,Fract,doGKT
+  use module_energy,  only : calc_Enuc,calc_Embpt2
+  use module_ints,    only : calc_Ints,get_Occ
+  use module_scf,     only : run_SCF
+  use module_wavefun, only : do_guess,dia_S
+  use module_props,   only : print_Eigen
+  use module_trans,   only : trans_full,transdone
+  use module_occupy,  only : calc_GKT,run_corrF
   implicit none
 
 ! read input and calculate dimensions
@@ -52,12 +53,15 @@ program samsa
   call print_Eigen()
 
 ! run occupation number schemes
-  if(doEVPT2)then
+  if(doGKT)then
     if(.not.transdone)then
-      call trans_full()
+      call trans_full(.true.)
     endif
-    call calc_EVPT2()
+    call calc_GKT(.true.)
   endif
+
+! correct Fock matrix
+!  call run_corrF(.true.)
 
 ! using fractional occupation numbers in post-HF?
   if(Fract==2)then
@@ -65,23 +69,30 @@ program samsa
   endif
 
 ! run post-scf
-  if(doMP2)then
+  if(doMBPT2)then
     if(.not.transdone)then
-      call trans_full()
+      call trans_full(.true.)
     endif
-    call run_MP2()
+    call run_MBPT2()
+  endif
+
+  if(doDCPT2)then
+    if(.not.transdone)then
+      call trans_full(.true.)
+    endif
     call run_DCPT2()
   endif
+
 
 end program samsa
 
 
 
-subroutine run_MP2()
-  use module_energy, only : calc_Emp2
-  use module_energy, only : Emp2     
-  use module_energy, only : Emp2f 
-  use module_energy, only : E_OS,E_SS,E_SSx,E_SSc
+subroutine run_MBPT2()
+  use module_energy, only : calc_Embpt2
+  use module_energy, only : Embpt2     
+  use module_energy, only : Embpt2f 
+  use module_energy, only : E_OS,E_SS,E_SSx,E_SSc,E_1,E_1f
   use module_energy, only : E_AAx,E_AAc,E_BBx,E_BBc
   use module_energy, only : E_AAxf,E_AAcf,E_BBxf,E_BBcf
   use module_energy, only : E_OSf
@@ -92,44 +103,47 @@ subroutine run_MP2()
     write(*,*) "    "
     write(*,*) "    Calculating RHF-MBPT(2) correlation energy"
     write(*,*) "    "
-    call calc_Emp2()
+    call calc_Embpt2()
     write(*,*) "    "
+    write(*,'("      E_1    = ",F12.6)') E_1
     write(*,'("      E_OS   = ",F12.6)') E_OS
     write(*,'("      E_SS   = ",F12.6)') E_SS
     write(*,'("      E_SSx  = ",F12.6)') E_SSx
     write(*,'("      E_SSc  = ",F12.6)') E_SSc
     write(*,*) "    "
-    write(*,'("      EMP2   = ",F12.6)') Emp2
+    write(*,'("      EMBPT2 = ",F12.6)') Embpt2
     write(*,*) "    "
   elseif(spins==2)then
     write(*,*) "    "
     write(*,*) "    Calculating UHF-MBPT(2) correlation energy"
     write(*,*) "    "
-    call calc_Emp2()
+    call calc_Embpt2()
     write(*,*) "    "
+    write(*,'("      E_1    = ",F12.6)') E_1
     write(*,'("      E_OS   = ",F12.6)') E_OS
     write(*,'("      E_AAx  = ",F12.6)') E_AAx
     write(*,'("      E_AAc  = ",F12.6)') E_AAc
     write(*,'("      E_BBx  = ",F12.6)') E_BBx
     write(*,'("      E_BBc  = ",F12.6)') E_BBc
     write(*,*) "    "
-    write(*,'("      EMP2   = ",F12.6)') Emp2
+    write(*,'("      EMBPT2 = ",F12.6)') Embpt2
     write(*,*) "    "
     write(*,*) "    "
     write(*,*) "    Calculating UHF-MBPT(2) correlation energy (nOcc version)"
     write(*,*) "    "
     write(*,*) "    "
+    write(*,'("      E_1    = ",F12.6)') E_1f
     write(*,'("      E_OS   = ",F12.6)') E_OSf
     write(*,'("      E_AAx  = ",F12.6)') E_AAxf
     write(*,'("      E_AAc  = ",F12.6)') E_AAcf
     write(*,'("      E_BBx  = ",F12.6)') E_BBxf
     write(*,'("      E_BBc  = ",F12.6)') E_BBcf
     write(*,*) "    "
-    write(*,'("      EMP2   = ",F12.6)') Emp2f
+    write(*,'("      EMBPT2 = ",F12.6)') Embpt2f
     write(*,*) "    "
   endif
 
-end subroutine run_MP2
+end subroutine run_MBPT2
 
 subroutine run_DCPT2()
   use module_energy, only : calc_Edcpt2

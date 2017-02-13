@@ -7,7 +7,7 @@ contains
 !#############################################
 !#         Full Integral Transformation
 !#############################################
-subroutine trans_full 
+subroutine trans_full(doprint) 
   use module_ints, only          : Index2e
   use module_data, only          : dim_1e,dim_2e,ERI,Coef,MOI,spins,SMO
   implicit none
@@ -21,10 +21,13 @@ subroutine trans_full
   double precision, allocatable :: in_pjkl(:,:,:,:)
   double precision, allocatable :: in_ijkl(:,:,:,:)
   real                          :: starttime,stoptime,time
+  logical, intent(IN)           :: doprint
 
-  write(*,*) "    "
-  write(*,*) "    Performing full integral transformation... "
-  write(*,*) "    "
+  if(doprint)then
+    write(*,*) "    "
+    write(*,*) "    Performing full integral transformation... "
+    write(*,*) "    "
+  endif
 
   starttime = secnds(0.0)
 !  call cpu_time(starttime)
@@ -37,8 +40,10 @@ subroutine trans_full
   in_pqrl = 0.0d0
 
 ! pqrs -> pqrl
-!$ write(*,*) "      (in parallel)" !, OMP_NUM_THREADS
-  write(*,*) "      (pq|rs) -> (pq|rl)"
+!!$ write(*,*) "      (in parallel)" !, OMP_NUM_THREADS
+  if(doprint)then
+    write(*,*) "      (pq|rs) -> (pq|rl)"
+  endif
 !$OMP PARALLEL PRIVATE(p,q,r,s,pq,rs,pqrs)
 !$OMP DO
   do l=0,dimMO
@@ -72,7 +77,9 @@ subroutine trans_full
   in_pqkl = 0.0d0
 
   ! pqrl -> pqkl
-  write(*,*) "      (pq|rl) -> (pq|kl)"
+  if(doprint)then
+    write(*,*) "      (pq|rl) -> (pq|kl)"
+  endif
 !$OMP PARALLEL PRIVATE(p,q,r,l)
 !$OMP DO
   do k=0,dimMO
@@ -103,7 +110,9 @@ subroutine trans_full
   in_pjkl = 0.0d0
 
   ! pqkl -> pjkl
-  write(*,*) "      (pq|kl) -> (pj|kl)"
+  if(doprint)then
+    write(*,*) "      (pq|kl) -> (pj|kl)"
+  endif
 !$OMP PARALLEL PRIVATE(p,q,k,l)
 !$OMP DO
   do j=0,dimMO
@@ -134,7 +143,9 @@ subroutine trans_full
   in_ijkl = 0.0d0
 
   ! pjkl -> ijkl
-  write(*,*) "      (pj|kl) -> (ij|kl)"
+  if(doprint)then
+    write(*,*) "      (pj|kl) -> (ij|kl)"
+  endif
 !$OMP PARALLEL PRIVATE(p,j,k,l)
 !$OMP DO
   do i=0,dimMO
@@ -161,8 +172,10 @@ subroutine trans_full
 
   deallocate(in_pjkl)
 
-  write(*,*) "      done ..."
-  write(*,*) "    "
+  if(doprint)then
+    write(*,*) "      done ..."
+    write(*,*) "    "
+  endif
 
   if(spins == 1)then
     allocate(MOI(0:dim_2e-1))
@@ -188,7 +201,9 @@ subroutine trans_full
 
   elseif(spins == 2)then
     dimMO = dim_1e*spins
-    allocate(SMO(1:dimMO,1:dimMO,1:dimMO,1:dimMO))
+    if(.not.allocated(smo))then
+      allocate(SMO(1:dimMO,1:dimMO,1:dimMO,1:dimMO))
+    endif
 
 !$OMP PARALLEL PRIVATE(j,k,l)
 !$OMP DO
@@ -214,7 +229,9 @@ subroutine trans_full
 !  call cpu_time(stoptime)
 !!$  call omp_get_wtime(stoptime)
 !  time = stoptime-starttime
-  write(*,*) "      Integral transformation done in ",time," s"
+  if(doprint)then
+    write(*,*) "      Integral transformation done in ",time," s"
+  endif
 
 end subroutine trans_full
 

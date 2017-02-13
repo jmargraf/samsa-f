@@ -1,5 +1,5 @@
 12
-charge=0 mult=1 calc=rhf maxscf=264 econv=1.0e-9 dconv=1.0e-9 basis=min
+charge=0 mult=1 calc=rhf maxscf=264 econv=1.0e-9 dconv=1.0e-9 basis=svp mbpt2
 C         -1.38854        0.11926       -0.00001
 C         -0.59098        1.26213       -0.00000
 C          0.79755        1.14287       -0.00001

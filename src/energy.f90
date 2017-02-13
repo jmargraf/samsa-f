@@ -6,38 +6,42 @@ module module_energy
   double precision                            :: Eelec    = 0.0d0         
   double precision                            :: Etot     = 0.0d0          
   double precision                            :: Eold     = 0.0d0 
-  double precision                            :: Emp2     = 0.0d0
-  double precision                            :: Emp2f    = 0.0d0
+  double precision                            :: Embpt2   = 0.0d0
+  double precision                            :: Embpt2f  = 0.0d0
   double precision                            :: Edcpt2   = 0.0d0
   double precision                            :: Edcpt2f  = 0.0d0
-  double precision                            :: E_OS,E_OSf,E_SS,E_SSx,E_SSc
+  double precision                            :: E_1,E_1f,E_OS,E_OSf,E_SS,E_SSx,E_SSc
   double precision                            :: E_AAx,E_AAc,E_BBx,E_BBc
   double precision                            :: E_AAxf,E_AAcf,E_BBxf,E_BBcf
 
 contains
 
 !#############################################
-!#            Calculate E_mp2
+!#            Calculate E_mbpt2
 !#############################################
-subroutine calc_Emp2
+subroutine calc_Embpt2
   use module_data,      only : MOI,Spins,dim_1e,nOccA,nOccB,Eps,SMO,Occ
-  use module_data,      only : DropMO,DoDrop
+  use module_data,      only : DropMO,DoDrop,Fock,DoSingles
   use module_ints,      only : Index2e
+  use module_wavefun,   only : Fock_to_MO,Fock_to_AO
   implicit none
   integer                   :: iSpin,i,j,a,b,ia,ja,jb,ib,iajb,ibja,MOZero
   double precision          :: occ_factor
 
-  Emp2  = 0.0d0
-  E_OS  = 0.0d0
-  E_SS  = 0.0d0
-  E_SSx = 0.0d0
-  E_SSc = 0.0d0
-  E_AAx = 0.0d0
-  E_AAc = 0.0d0
-  E_BBx = 0.0d0
-  E_BBc = 0.0d0
+  Embpt2 = 0.0d0
+  E_OS   = 0.0d0
+  E_SS   = 0.0d0
+  E_SSx  = 0.0d0
+  E_SSc  = 0.0d0
+  E_AAx  = 0.0d0
+  E_AAc  = 0.0d0
+  E_BBx  = 0.0d0
+  E_BBc  = 0.0d0
+  E_1    = 0.0d0
 
   MOZero = 0
+
+  call Fock_to_MO()
 
   if(spins==1)then
 !    write(*,*) "    "
@@ -53,6 +57,10 @@ subroutine calc_Emp2
     do i=MOZero,nOccA-1
       do a=nOccA,dim_1e-1
         call Index2e(i,a,ia)
+        if(doSingles)then
+          E_1   = E_1 + Fock(i+1,a+1,1)*Fock(i+1,a+1,1)/(Eps(a+1,1)-Eps(i+1,1))
+        endif
+
         do j=MOZero,nOccA-1
           call Index2E(j,a,ja)
           do b=nOccA,dim_1e-1
@@ -78,7 +86,7 @@ subroutine calc_Emp2
       enddo
     enddo
 
-    Emp2 = E_OS + E_SS
+    Embpt2 = E_1 + E_OS + E_SS
 
   elseif(spins==2)then
 !    write(*,*) "    "
@@ -108,6 +116,11 @@ subroutine calc_Emp2
     ! Same Spin AA
     do i=MOZero,nOccA*2-1,2
       do a=nOccA*2+1,dim_1e*2-1,2
+        if(doSingles)then
+          E_1   = E_1 - Fock((i+1)/2,(a+1)/2,1)*Fock((i+1)/2,(a+1)/2,1)*0.5d0/  & 
+                        (Eps((a+1)/2,1)-Eps((i+1)/2,1))
+        endif
+
         do j=MOZero,nOccA*2-1,2
           do b=nOccA*2+1,dim_1e*2-1,2
 
@@ -127,6 +140,11 @@ subroutine calc_Emp2
     ! Same Spin BB
     do i=MOZero+1,nOccB*2,2
       do a=nOccB*2+2,dim_1e*2,2
+        if(doSingles)then
+          E_1   = E_1 - Fock(i/2,a/2,2)*Fock(i/2,a/2,2)*0.5d0/  & 
+                        (Eps(a/2,2)-Eps(i/2,2))
+        endif
+
         do j=MOZero+1,nOccB*2,2
           do b=nOccB*2+2,dim_1e*2,2
 
@@ -143,7 +161,7 @@ subroutine calc_Emp2
       enddo
     enddo
 
-    Emp2 = E_OS + E_AAc + E_AAx + E_BBx + E_BBc
+    Embpt2 = E_1 + E_OS + E_AAc + E_AAx + E_BBx + E_BBc
 
   endif
 
@@ -156,12 +174,13 @@ subroutine calc_Emp2
       MOZero = DropMO*2+1
     endif
 
-    Emp2f    = 0.0d0
-    E_OSf    = 0.0d0
-    E_AAxf   = 0.0d0
-    E_AAcf   = 0.0d0
-    E_BBxf   = 0.0d0
-    E_BBcf   = 0.0d0
+    Embpt2f    = 0.0d0
+    E_1f       = 0.0d0
+    E_OSf      = 0.0d0
+    E_AAxf     = 0.0d0
+    E_AAcf     = 0.0d0
+    E_BBxf     = 0.0d0
+    E_BBcf     = 0.0d0
 
     ! Opposite Spin 
     do i=MOZero,dim_1e*2-1,2
@@ -182,6 +201,12 @@ subroutine calc_Emp2
     ! Same Spin AA
     do i=MOZero,dim_1e*2-1,2
       do a=MOZero,dim_1e*2-1,2
+        occ_factor = (Occ((i+1)/2,1)*(1-Occ((a+1)/2,1)))
+        if (occ_factor==0.0d0) cycle
+        if(doSingles)then
+          E_1f  = E_1f - Fock((i+1)/2,(a+1)/2,1)*Fock((i+1)/2,(a+1)/2,1)*occ_factor*0.5d0/  &
+                         (Eps((a+1)/2,1)-Eps((i+1)/2,1))
+        endif
         do j=MOZero,dim_1e*2-1,2
           do b=MOZero,dim_1e*2-1,2
             occ_factor = (Occ((i+1)/2,1)*(1-Occ((a+1)/2,1))*Occ((j+1)/2,1)*(1-Occ((b+1)/2,1)))
@@ -204,6 +229,12 @@ subroutine calc_Emp2
     ! Same Spin BB
     do i=MOZero+1,dim_1e*2,2
       do a=MOZero+1,dim_1e*2,2
+        occ_factor = (Occ(i/2,2)*(1-Occ(a/2,2)))
+        if (occ_factor==0.0d0) cycle
+        if(doSingles)then
+          E_1f  = E_1f - Fock(i/2,a/2,2)*Fock(i/2,a/2,2)*occ_factor*0.5d0/  &
+                       (Eps(a/2,2)-Eps(i/2,2))
+        endif
         do j=MOZero+1,dim_1e*2,2
           do b=MOZero+1,dim_1e*2,2
             occ_factor = (Occ(i/2,2)*(1-Occ(a/2,2))*Occ(j/2,2)*(1-Occ(b/2,2)))
@@ -222,11 +253,13 @@ subroutine calc_Emp2
       enddo
     enddo
 
-    Emp2f = E_OSf + E_AAcf + E_AAxf + E_BBxf + E_BBcf
+    Embpt2f = E_1f + E_OSf + E_AAcf + E_AAxf + E_BBxf + E_BBcf
 
   endif
 
-end subroutine calc_Emp2
+    call Fock_to_AO()
+
+end subroutine calc_Embpt2
 
 
 !#############################################
@@ -487,6 +520,7 @@ subroutine calc_Energy
 
 
 end subroutine calc_Energy
+
 
 !#############################################
 !#            Calculate E_nuclear

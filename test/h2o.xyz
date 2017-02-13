@@ -1,5 +1,5 @@
 3
-charge=0 mult=1 calc=uhf basis=svp econv=1e-12 mbpt2 fract=1 
+charge=0 mult=1 calc=uhf basis=svp econv=1e-12 mbpt2 drop maxscf=100 scgkt 
 O          0.00000        0.00000        0.00000
 H          0.00000        0.00000        0.95691
 H          0.92636        0.00000       -0.23987

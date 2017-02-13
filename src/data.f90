@@ -73,11 +73,11 @@ subroutine read_input()
   character(len=1024)      :: keywords
   character(len=64)        :: argument
 
-  filename = trim(mol_name) // ".xyz"
+  filename = trim(mol_name) // ".inp"
 
   open(10,file=trim(filename),status='old',action='read')
-  read(10,*) natoms
-  call allocate_geo
+!  read(10,*) natoms
+!  call allocate_geo
 
   write(*,*) ""
   write(*,*) "  Keywords: "
@@ -95,6 +95,9 @@ subroutine read_input()
   elseif(calctype == "UHF")then
     spins = 2
   endif
+
+  read(10,*) natoms
+  call allocate_geo
 
   do i=1,natoms
     read(10,*) atom(i),xyz(i,1),xyz(i,2),xyz(i,3)

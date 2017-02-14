@@ -3,7 +3,7 @@ program samsa
   use module_data,    only : read_input
   use module_data,    only : dimensions
   use module_data,    only : allocate_SCFmat 
-  use module_data,    only : doMBPT2,doDCPT2,Fract,doGKT
+  use module_data,    only : doMBPT2,doDCPT2,Fract,doGKT,doLCCD
   use module_energy,  only : calc_Enuc,calc_Embpt2
   use module_ints,    only : calc_Ints,get_Occ
   use module_scf,     only : run_SCF
@@ -11,6 +11,7 @@ program samsa
   use module_props,   only : print_Eigen
   use module_trans,   only : trans_full,transdone
   use module_occupy,  only : calc_GKT,run_corrF
+  use module_cc,      only : calc_Elccd
   implicit none
 
 ! read input and calculate dimensions
@@ -74,6 +75,10 @@ program samsa
       call trans_full(.true.)
     endif
     call run_MBPT2()
+  endif
+
+  if(doLCCD)then
+    call calc_Elccd()
   endif
 
   if(doDCPT2)then

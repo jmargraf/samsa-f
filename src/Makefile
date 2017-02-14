@@ -3,11 +3,11 @@ COMP = gfortran
 FLAGS = -fopenmp 
 #FLAGS = 
 #BLASLIB = -lblas
-MKLLIB = -lblas -llapack
-#MKLLIB = ${MKLROOT}/lib/intel64/libmkl_blas95_lp64.a ${MKLROOT}/lib/intel64/libmkl_lapack95_lp64.a -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_sequential.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl
+#MKLLIB = -lblas -llapack
+MKLLIB = ${MKLROOT}/lib/intel64/libmkl_blas95_lp64.a ${MKLROOT}/lib/intel64/libmkl_lapack95_lp64.a -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_sequential.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl
 
-../bin/samsa.x : constants.o io.o data.o ints.o wavefun.o energy.o props.o trans.o occupy.o scf.o samsa.o
-	${COMP} ${FLAGS} constants.o io.o data.o ints.o wavefun.o energy.o props.o trans.o occupy.o scf.o samsa.o ${MKLLIB} -o ../bin/samsa.x
+../bin/samsa.x : constants.o io.o data.o ints.o wavefun.o energy.o cc.o props.o trans.o occupy.o scf.o samsa.o
+	${COMP} ${FLAGS} constants.o io.o data.o ints.o wavefun.o energy.o cc.o props.o trans.o occupy.o scf.o samsa.o ${MKLLIB} -o ../bin/samsa.x
 
 constants.o : constants.f90
 	${COMP} ${FLAGS} -c constants.f90 
@@ -26,6 +26,9 @@ wavefun.o : wavefun.f90
 
 energy.o : energy.f90
 	${COMP} ${FLAGS} -c energy.f90 
+
+cc.o : cc.f90
+	${COMP} ${FLAGS} -c cc.f90 
 
 props.o : props.f90
 	${COMP} ${FLAGS} -c props.f90

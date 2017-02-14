@@ -42,3 +42,6 @@ scf.o : scf.f90
 samsa.o : samsa.f90
 	${COMP} ${FLAGS} -c samsa.f90 
 
+clean:
+	rm *.o *.mod
+

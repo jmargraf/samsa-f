@@ -177,7 +177,7 @@ subroutine do_guess()
 
   if(guess == "core")then
     write(*,*) ""
-    write(*,*) "    Core initial guess..."
+    write(*,*) "    core initial guess..."
     write(*,*) ""
     do i=1,Spins
       Fock(:,:,i) = Hcore(:,:)

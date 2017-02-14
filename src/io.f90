@@ -35,7 +35,7 @@ end subroutine print_Mat
 !#                Print Vector       
 !#############################################
 subroutine print_Vec(Vec,n,nname,VecName)
-  use module_data,            only : noccA
+!  use module_data,            only : noccA
   implicit none
   double precision, intent(in)     :: Vec(:)
   integer, intent(in)              :: n
@@ -49,7 +49,7 @@ subroutine print_Vec(Vec,n,nname,VecName)
 
   do i=1,n
     write(*,'(I5," ",F12.5," ")',advance="no") i,Vec(i)
-    if(i==noccA) write(*,'(A)',advance="no") " HOMO"
+!    if(i==noccA) write(*,'(A)',advance="no") " HOMO"
     write(*,*) ""
   enddo
 
@@ -60,7 +60,7 @@ end subroutine print_Vec
 !#             Print Spin-Vectors       
 !#############################################
 subroutine print_SVec(Vec,n,nname,VecName)
-  use module_data,            only : noccA,noccB
+!  use module_data,            only : noccA,noccB
   implicit none
   double precision, intent(in)     :: Vec(:,:)
   integer, intent(in)              :: n
@@ -76,8 +76,8 @@ subroutine print_SVec(Vec,n,nname,VecName)
     do j=1,2
       write(*,'(I5," ",F12.5," ")',advance="no") i,Vec(i,j)
     enddo
-    if(i==noccA) write(*,'(A)',advance="no") " SOMOa"
-    if(i==noccB) write(*,'(A)',advance="no") " SOMOb"
+!   if(i==noccA) write(*,'(A)',advance="no") " SOMOa"
+!   if(i==noccB) write(*,'(A)',advance="no") " SOMOb"
     write(*,*) ""
   enddo
 

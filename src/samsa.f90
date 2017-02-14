@@ -3,7 +3,8 @@ program samsa
   use module_data,    only : read_input
   use module_data,    only : dimensions
   use module_data,    only : allocate_SCFmat 
-  use module_data,    only : doMBPT2,doDCPT2,Fract,doGKT,doLCCD
+  use module_data,    only : doMBPT2,doDCPT2,Fract,doGKT
+  use module_data,    only : doLCCD,doDSCF
   use module_energy,  only : calc_Enuc,calc_Embpt2
   use module_ints,    only : calc_Ints,get_Occ
   use module_scf,     only : run_SCF
@@ -12,6 +13,7 @@ program samsa
   use module_trans,   only : trans_full,transdone
   use module_occupy,  only : calc_GKT,run_corrF
   use module_cc,      only : calc_Elccd
+  use module_dscf,    only : calc_dSCF
   implicit none
 
 ! read input and calculate dimensions
@@ -48,7 +50,7 @@ program samsa
   call do_guess()
 
 ! run scf
-  call run_SCF()
+  call run_SCF(.true.)
 
 ! run properties
   call print_Eigen()
@@ -59,6 +61,8 @@ program samsa
       call trans_full(.true.)
     endif
     call calc_GKT(.true.)
+  elseif(doDSCF)then
+    call calc_dSCF(.true.)
   endif
 
 ! correct Fock matrix

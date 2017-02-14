@@ -10,7 +10,7 @@ contains
 !#############################################
 !#              Run SCF Loop        
 !#############################################
-subroutine run_SCF
+subroutine run_SCF(DoPrint)
   use module_data,                      only : MaxSCF,Damp,doSCGKT,dim_1e,Fock
   use module_energy,                    only : Eold,calc_Energy,Etot,Eelec
   use module_wavefun,                   only : ort_Fock,dia_Fock,deort_Fock
@@ -23,13 +23,19 @@ subroutine run_SCF
   implicit none
   integer                  :: iSCF
   real                     :: time, starttime
+  logical, intent(IN)      :: DoPrint
 
   starttime=secnds(0.0)
 
-  write(*,*) ""
-  write(*,*) "    starting SCF ..."
-  write(*,*) ""
-  write(*,*) "          #           Etot                 dE                  Drmsd      Damp"
+  if(DoPrint)then
+    write(*,*) ""
+    write(*,*) "    starting SCF ..."
+    write(*,*) ""
+    write(*,*) "          #           Etot                 dE                  Drmsd      Damp"
+  endif
+
+  SCFconv  = .false.
+  dE       = 0.0d0
 
   do iSCF=1,MaxSCF
     Eold = Etot
@@ -49,9 +55,11 @@ subroutine run_SCF
     dE = Etot - Eold     
 
     !  iSCF   Etot  dE   Drmsd
-    write(*,'("  SCF  ",I5,"  ",3(F18.10,"  "),F5.2)') iSCF, Etot, dE, Drmsd, Damp
+    if(DoPrint)then
+      write(*,'("  SCF  ",I5,"  ",3(F18.10,"  "),F5.2)') iSCF, Etot, dE, Drmsd, Damp
+    endif
 
-    call check_Conv()
+    call check_Conv(DoPrint)
 
     if(SCFconv .or. (iSCF==MaxSCF-1) ) exit
 
@@ -69,12 +77,19 @@ subroutine run_SCF
     endif
   enddo
 
-  write(*,*) "         Eelec =",Eelec
-  write(*,*) "    Final Etot =",Etot
+  if(.not.SCFconv)then
+    write(*,*) "  (!) Warning: The SCF seems to be lost in a kafkaesque nightmare and has NOT converged (!)"
+  endif
+
+  if(DoPrint)then
+    write(*,*) "         Eelec =",Eelec
+    write(*,*) "    Final Etot =",Etot
+  endif
 
   time=secnds(starttime)
-  write(*,*) "      SCF done ",time," s"
-
+  if(DoPrint)then
+    write(*,*) "      SCF done in ",time," s"
+  endif
 
   call Fock_to_MO()
 !  call print_Mat(Fock(:,:,1),dim_1e,7,"MO Fock")
@@ -130,35 +145,41 @@ end subroutine recalc_WF
 !#############################################
 !#             Check Convergence       
 !#############################################
-subroutine check_Conv()
+subroutine check_Conv(DoPrint)
   use module_data,      only : Econv 
   use module_data,      only : Dconv 
   use module_data,      only : DoDamp, Damp,DampTol
   use module_energy,    only : Eelec, Etot
   use module_wavefun,   only : Drmsd
   implicit none
+  logical, intent(IN)       :: DoPrint
 
   if(abs(dE) < 1.0d-2 .and. Damp /= 1.0d0  & 
                       .and. Damp /= 0.7d0  &
                       .and. DoDamp)then
     Damp = 0.7d0
-    write(*,*) "    Damping set to 0.7"
+    if(DoPrint)then
+      write(*,*) "    Damping set to 0.7"
+    endif
   endif
 
   if(abs(dE) < DampTol .and. Damp /= 1.0d0  & 
                       .and. DoDamp)then
     Damp = 1.0d0
     DoDamp =.false.
-    write(*,*) "    Damping turned off"
+    if(DoPrint)then
+      write(*,*) "    Damping turned off"
+    endif
   endif
 
   if(Drmsd<Dconv .and. abs(dE)<Econv)then
-    write(*,*) " "
-    write(*,*) "    SCF converged (hurra)!"
-    write(*,*) " "
+    if(DoPrint)then
+      write(*,*) " "
+      write(*,*) "    SCF converged (hurra)!"
+      write(*,*) " "
+    endif
 !    write(*,*) "         Eelec=",Eelec
 !    write(*,*) "    Final Etot=",Etot
-
     SCFconv = .true.
   endif
 

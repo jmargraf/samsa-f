@@ -32,6 +32,7 @@ module module_data
   logical                                       :: DoDCPT2 = .false.
   logical                                       :: DoLCCD  = .false.
   logical                                       :: DoGKT = .false.
+  logical                                       :: DoDSCF = .false.
   logical                                       :: DoSingles = .true.
   logical                                       :: DoDrop = .true.
   logical                                       :: DynDamp = .false.
@@ -921,6 +922,7 @@ subroutine print_options()
   write(*,'("    DoDCPT2 = ",L12)')      doDCPT2
   write(*,'("    DoLCCD  = ",L12)')      doLCCD
   write(*,'("    doGKT   = ",L12)')      doGKT
+  write(*,'("    doDSCF  = ",L12)')      doDSCF
   write(*,'("    doDrop  = ",L12)')      doDrop
 
   write(*,'("    Charge  = ",I12)')      Charge
@@ -1051,9 +1053,12 @@ subroutine parse_option(argument)
     read(UArgument(7:),*) Fract
 !    write(*,*) '    FRACT     = ',Fract
 
-  elseif(uargument(1:5)=='GKT')then
+  elseif(uargument(1:3)=='GKT')then
     doGKT = .true.
 !    write(*,*) '    GKT '
+
+  elseif(uargument(1:4)=='DSCF')then
+    doDSCF = .true.
 
   elseif(uargument(1:4)=='DROP')then
     doDrop = .true.

@@ -191,6 +191,7 @@ subroutine trans_full(doprint)
           do l=0,k
             call Index2e(k,l,kl)
             call Index2e(ij,kl,ijkl)
+!            write(*,*) ijkl
             MOI(ijkl) = in_ijkl(i,j,k,l)       
           enddo
         enddo

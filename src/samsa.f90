@@ -61,9 +61,9 @@ program samsa
       call trans_full(.true.)
     endif
     call calc_GKT(.true.)
-  elseif(doDSCF)then
-    call calc_dSCF(.true.)
-  endif
+!  elseif(doDSCF)then
+!    call calc_dSCF(.true.)
+   endif
 
 ! correct Fock matrix
 !  call run_corrF(.true.)
@@ -81,6 +81,10 @@ program samsa
     call run_MBPT2()
   endif
 
+  if(doDSCF)then
+    call calc_dSCF(.true.)
+  endif
+
   if(doLCCD)then
     call calc_Elccd()
   endif
@@ -92,6 +96,10 @@ program samsa
     call run_DCPT2()
   endif
 
+  write(*,*) "    "
+  write(*,*) "    Calculation finished successfully! "
+  write(*,*) "    "
+  write(*,*) "    "
 
 end program samsa
 

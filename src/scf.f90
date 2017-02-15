@@ -78,7 +78,9 @@ subroutine run_SCF(DoPrint)
   enddo
 
   if(.not.SCFconv)then
+    write(*,*) ""
     write(*,*) "  (!) Warning: The SCF seems to be lost in a kafkaesque nightmare and has NOT converged (!)"
+    write(*,*) ""
   endif
 
   if(DoPrint)then
@@ -91,13 +93,13 @@ subroutine run_SCF(DoPrint)
     write(*,*) "      SCF done in ",time," s"
   endif
 
-  call Fock_to_MO()
+!  call Fock_to_MO()
 !  call print_Mat(Fock(:,:,1),dim_1e,7,"MO Fock")
 !  call print_Mat(Fock(:,:,2),dim_1e,7,"MO Fock")
-  call SemiCanonical()
+!  call SemiCanonical()
 !  call print_Mat(Fock(:,:,1),dim_1e,7,"MO Fock")
 !  call print_Mat(Fock(:,:,2),dim_1e,7,"MO Fock")
-  call Fock_to_AO()
+!  call Fock_to_AO()
 
 end subroutine run_SCF
 

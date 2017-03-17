@@ -187,7 +187,7 @@ subroutine calc_Embpt2
       do a=MOZero,dim_1e*2-1,2
         do j=MOZero+1,dim_1e*2,2
           do b=MOZero+1,dim_1e*2,2
-            occ_factor = (Occ((i+1)/2,1)*(1-Occ((a+1)/2,1))*Occ(j/2,2)*(1-Occ(b/2,2)))
+            occ_factor = (Occ((i+1)/2,1)*(1.0d0-Occ((a+1)/2,1))*Occ(j/2,2)*(1.0d0-Occ(b/2,2)))
             if (occ_factor==0.0d0) cycle
             if (a == b .or. i == j) cycle
             E_OSf = E_OSf - (SMO(i,a,j,b)*SMO(i,a,j,b))*occ_factor/       &
@@ -201,15 +201,16 @@ subroutine calc_Embpt2
     ! Same Spin AA
     do i=MOZero,dim_1e*2-1,2
       do a=MOZero,dim_1e*2-1,2
-        occ_factor = (Occ((i+1)/2,1)*(1-Occ((a+1)/2,1)))
+        occ_factor = (Occ((i+1)/2,1)*(1.0d0-Occ((a+1)/2,1)))
+!        write(*,*) i,a,Eps((a+1)/2,1),Eps((i+1)/2,1)
         if (occ_factor==0.0d0) cycle
-        if(doSingles)then
+        if (doSingles .and. i/=a) then
           E_1f  = E_1f - Fock((i+1)/2,(a+1)/2,1)*Fock((i+1)/2,(a+1)/2,1)*occ_factor*0.5d0/  &
                          (Eps((a+1)/2,1)-Eps((i+1)/2,1))
         endif
         do j=MOZero,dim_1e*2-1,2
           do b=MOZero,dim_1e*2-1,2
-            occ_factor = (Occ((i+1)/2,1)*(1-Occ((a+1)/2,1))*Occ((j+1)/2,1)*(1-Occ((b+1)/2,1)))
+            occ_factor = (Occ((i+1)/2,1)*(1.0d0-Occ((a+1)/2,1))*Occ((j+1)/2,1)*(1.0d0-Occ((b+1)/2,1)))
             if (occ_factor==0.0d0) cycle
             if (a == b .or. i == j) cycle
             E_AAcf = E_AAcf- (SMO(i,a,j,b)*SMO(i,a,j,b))*0.5d0*occ_factor/  &
@@ -229,15 +230,15 @@ subroutine calc_Embpt2
     ! Same Spin BB
     do i=MOZero+1,dim_1e*2,2
       do a=MOZero+1,dim_1e*2,2
-        occ_factor = (Occ(i/2,2)*(1-Occ(a/2,2)))
+        occ_factor = (Occ(i/2,2)*(1.0d0-Occ(a/2,2)))
         if (occ_factor==0.0d0) cycle
-        if(doSingles)then
+        if (doSingles .and. i/=a ) then
           E_1f  = E_1f - Fock(i/2,a/2,2)*Fock(i/2,a/2,2)*occ_factor*0.5d0/  &
                        (Eps(a/2,2)-Eps(i/2,2))
         endif
         do j=MOZero+1,dim_1e*2,2
           do b=MOZero+1,dim_1e*2,2
-            occ_factor = (Occ(i/2,2)*(1-Occ(a/2,2))*Occ(j/2,2)*(1-Occ(b/2,2)))
+            occ_factor = (Occ(i/2,2)*(1.0d0-Occ(a/2,2))*Occ(j/2,2)*(1.0d0-Occ(b/2,2)))
             if (occ_factor==0.0d0) cycle
             if (a == b .or. i == j) cycle
             E_BBcf= E_BBcf- (SMO(i,a,j,b)*SMO(i,a,j,b))*0.5d0*occ_factor/  &

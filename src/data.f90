@@ -61,6 +61,7 @@ module module_data
 ! Integrals
   double precision, allocatable                 :: Sij(:,:)         
   double precision, allocatable                 :: S12(:,:)
+  double precision, allocatable                 :: Sm12(:,:)
   double precision, allocatable                 :: Vij(:,:)         
   double precision, allocatable                 :: Tij(:,:)         
   double precision, allocatable                 :: ERI(:)      
@@ -161,12 +162,26 @@ subroutine allocate_SCFmat()
            Densold(dim_1e,dim_1e,spins), &
            Eps(dim_1e,spins),            &
            Hcore(dim_1e,dim_1e),         &
-           S12(dim_1e,dim_1e),           &
+           Sm12(dim_1e,dim_1e),          &
            Sij(dim_1e,dim_1e),           &
            Vij(dim_1e,dim_1e),           &
            Tij(dim_1e,dim_1e),           &
            ERI(dim_2e)                   &
           )
+
+! Initialize
+  Fock = 0.0d0
+  Fockold = 0.0d0
+  Coef = 0.0d0
+  Dens = 0.0d0
+  Densold = 0.0d0
+  Eps = 0.0d0
+  Hcore = 0.0d0
+  Sm12 = 0.0d0
+  Sij = 0.0d0
+  Vij = 0.0d0
+  Tij = 0.0d0
+  ERI = 0.0d0
 
 end subroutine allocate_SCFmat
 

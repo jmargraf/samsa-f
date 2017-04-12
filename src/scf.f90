@@ -12,7 +12,7 @@ contains
 !#############################################
 subroutine run_SCF(DoPrint)
   use module_data,                      only : MaxSCF,Damp,doSCGKT,dim_1e,Fock
-  use module_energy,                    only : Eold,calc_Energy,Etot,Eelec
+  use module_energy,                    only : Eold,calc_Energy,Etot,Eelec,E1e,E2e
   use module_wavefun,                   only : ort_Fock,dia_Fock,deort_Fock
   use module_wavefun,                   only : calc_Dens,calc_Fock
   use module_wavefun,                   only : Drmsd
@@ -84,6 +84,8 @@ subroutine run_SCF(DoPrint)
   endif
 
   if(DoPrint)then
+    write(*,*) "           E1e =",E1e
+    write(*,*) "           E2e =",E2e
     write(*,*) "         Eelec =",Eelec
     write(*,*) "    Final Etot =",Etot
   endif

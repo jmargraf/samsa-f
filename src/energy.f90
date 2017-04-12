@@ -13,6 +13,7 @@ module module_energy
   double precision                            :: E_1,E_1f,E_OS,E_OSf,E_SS,E_SSx,E_SSc
   double precision                            :: E_AAx,E_AAc,E_BBx,E_BBc
   double precision                            :: E_AAxf,E_AAcf,E_BBxf,E_BBcf
+  double precision                            :: E1e, E2e
 
 contains
 
@@ -503,16 +504,19 @@ subroutine calc_Energy
 
   Eelec = 0.0d0
   Etot  = 0.0d0
+  E1e   = 0.0d0
+  E2e   = 0.0d0
 
   do iSpin=1,Spins
     do i=1,dim_1e
       do j=1,dim_1e
-        Eelec = Eelec + Dens(i,j,iSpin)                & 
-                      *(Hcore(i,j) + Fock(i,j,iSpin))  &
-                      *(1.0d0/dble(Spins))
+        E1e = E1e + Dens(i,j,iSpin)*Hcore(i,j)*(2.0d0/dble(Spins))
+        E2e = E2e + Dens(i,j,iSpin)*(Fock(i,j,iSpin)-Hcore(i,j))*(1.0d0/dble(Spins))          
       enddo
     enddo
   enddo
+
+  Eelec = E1e + E2e
 
   Etot = Eelec + Enuc
 

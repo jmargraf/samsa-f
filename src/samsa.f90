@@ -14,6 +14,7 @@ program samsa
   use module_occupy,  only : calc_GKT,run_corrF
   use module_cc,      only : calc_Elccd
   use module_dscf,    only : calc_dSCF,calc_dfrac
+  use module_rdmft,   only : run_rdmft
   implicit none
 
 ! read input and calculate dimensions
@@ -58,6 +59,7 @@ program samsa
 
 ! calc NOs?
   call calc_natorbs()
+  call run_rdmft()
 
 ! run occupation number schemes
   if(doGKT)then

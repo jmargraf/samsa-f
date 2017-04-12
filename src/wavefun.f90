@@ -472,7 +472,7 @@ end subroutine calc_Dens
 !#       Calculate Dynamic Damping Factor
 !#############################################
 subroutine calc_DynDamp()
-  use module_data, only      : Fock,Coef,S12,dim_1e,Spins,Occ
+  use module_data, only      : Fock,Coef,dim_1e,Spins,Occ
   use module_data, only      : Dens,Densold,Hcore,Fockold,Damp
   implicit none
   double precision          :: E1a, E2a, E1b, E2b, E2ab, temp,tempa,tempb
@@ -520,7 +520,7 @@ end subroutine calc_DynDamp
 !#          Orthogonalize Fock      
 !#############################################
 subroutine ort_fock()
-  use module_data, only      : Fock,Coef,S12,dim_1e,Spins
+  use module_data, only      : Fock,Coef,Sm12,dim_1e,Spins
   use module_io, only        : print_Mat
   implicit none
   integer                         :: i
@@ -533,13 +533,13 @@ subroutine ort_fock()
   allocate(temp(dim_1e,dim_1e))
 
   do i=1,Spins
-!  $::Coeff = transpose($::S12) x $::Fock x $::S12;
+!  $::Coeff = transpose($::Sm12) x $::Fock x $::Sm12;
     call dgemm('N','N',dim_1e,dim_1e,dim_1e,1.0d0,  &
                 Fock(1:dim_1e,1:dim_1e,i),dim_1e,   &
-                S12(1:dim_1e,1:dim_1e),dim_1e,      &
+                Sm12(1:dim_1e,1:dim_1e),dim_1e,      &
                 0.0d0,temp(1:dim_1e,1:dim_1e),dim_1e)
     call dgemm('T','N',dim_1e,dim_1e,dim_1e,1.0d0,  &
-                S12(1:dim_1e,1:dim_1e),dim_1e,      &
+                Sm12(1:dim_1e,1:dim_1e),dim_1e,      &
                 temp(1:dim_1e,1:dim_1e),dim_1e,     &
                 0.0d0,Coef(1:dim_1e,1:dim_1e,i),dim_1e)
 !    call print_Mat(Coef(:,:,i),dim_1e,8,"ort Fock")
@@ -555,7 +555,7 @@ end subroutine ort_fock
 !#            Deorthogonalize Fock      
 !#############################################
 subroutine deort_fock()
-  use module_data, only      : Coef,S12,dim_1e,Spins
+  use module_data, only      : Coef,Sm12,dim_1e,Spins
   use module_io, only        : print_Mat
   implicit none
   integer                         :: i
@@ -568,10 +568,10 @@ subroutine deort_fock()
   allocate(temp(dim_1e,dim_1e))
 
   do i=1,Spins
-!  $::Coeff = $::S12 x $::Coeff;
+!  $::Coeff = $::Sm12 x $::Coeff;
     temp(1:dim_1e,1:dim_1e) = coef(1:dim_1e,1:dim_1e,i) 
     call dgemm('N','N',dim_1e,dim_1e,dim_1e,1.0d0,  &
-                S12(1:dim_1e,1:dim_1e),dim_1e,      &
+                Sm12(1:dim_1e,1:dim_1e),dim_1e,      &
                 temp(1:dim_1e,1:dim_1e),dim_1e,   &
                 0.0d0,Coef(1:dim_1e,1:dim_1e,i),dim_1e)
 !    call print_Mat(Coef(:,:,i),dim_1e,8,"deort WF")
@@ -617,6 +617,7 @@ end subroutine dia_fock
 !#              Diagonalize 1-RDM       
 !#############################################
 subroutine calc_natorbs()
+! see Pulay + Hamilton JCP 88, 4926 (1988)
   use module_data, only      : Dens,NOCoef,NOEps,dim_1e,Spins,S12,nel,NoccA,NoccB
   use module_io, only        : print_Mat,print_Vec
   implicit none
@@ -636,15 +637,11 @@ subroutine calc_natorbs()
   write(*,*) "    Diagonalizing 1-RDM..."
   write(*,*) ""
 
-!  call Fock_to_MO()
-!  call ort_Fock()
-!  call calc_Dens()
-
   do i=1,Spins
     temp = temp + Dens(1:dim_1e,1:dim_1e,i)*2.0d0/dble(Spins) 
   enddo
 
-  call makeS12()
+  call build_S12()
 
 ! S12 = S12 x D x S12
 !  call print_Mat(S12(:,:),dim_1e,3,"S12")
@@ -680,7 +677,9 @@ subroutine calc_natorbs()
 
   SpinQN = N*(N+4.0d0)/4.0d0 - Na*Nb - 0.5d0*sumocc2
 
-  write(*,*) "<S**2> = ",SpinQN  
+  write(*,*) ""
+  write(*,*) "    <S**2> = ",SpinQN  
+  write(*,*) ""
 
   deallocate(work)
 
@@ -688,9 +687,9 @@ end subroutine calc_natorbs
 
 
 !#############################################
-!#               Make Real S12          
+!#              Build S**1/2               
 !#############################################
-subroutine makeS12()
+subroutine build_S12()
   use module_data, only      : S12,Sij,dim_1e
   implicit none
   integer                         :: i,j,lwork,inf
@@ -701,10 +700,11 @@ subroutine makeS12()
   double precision, allocatable   :: temp(:,:)
 
   lwork = dim_1e*(3+dim_1e/2)
-  allocate(work(lwork),           &
-           S_vec(dim_1e,dim_1e),  &
-           S_mat(dim_1e,dim_1e),  &
-           S_val(dim_1e),         &
+  allocate(work(lwork),            &
+           S_vec(dim_1e,dim_1e),   &
+           S_mat(dim_1e,dim_1e),   &
+           S_val(dim_1e),          &
+           S12(1:dim_1e,1:dim_1e), &
            temp(dim_1e,dim_1e))
 
 !  write(*,*) ""
@@ -738,14 +738,14 @@ subroutine makeS12()
 
   deallocate(temp,S_vec,S_mat,S_val)
 
-end subroutine makeS12
+end subroutine build_S12
 
 
 !#############################################
 !#          Diagonalize Overlap     
 !#############################################
 subroutine dia_S()
-  use module_data, only      : S12,Sij,dim_1e
+  use module_data, only      : Sm12,Sij,dim_1e
   implicit none
   integer                         :: i,j,lwork,inf
   double precision, allocatable   :: work(:)
@@ -784,11 +784,11 @@ subroutine dia_S()
     enddo
   enddo
 
-! S12 = S_vec x S_mat x transpose(S_vec)
+! Sm12 = S_vec x S_mat x transpose(S_vec)
 ! temp = S_mat x transpose(S_vec) 
   call dgemm('N','T',dim_1e,dim_1e,dim_1e,1.0d0,S_mat,dim_1e,S_vec,dim_1e,0.0d0,temp,dim_1e)
 ! S12 = S_vec x temp 
-  call dgemm('N','N',dim_1e,dim_1e,dim_1e,1.0d0,S_vec,dim_1e,temp,dim_1e,0.0d0,S12,dim_1e)
+  call dgemm('N','N',dim_1e,dim_1e,dim_1e,1.0d0,S_vec,dim_1e,temp,dim_1e,0.0d0,Sm12,dim_1e)
 
   deallocate(temp,S_vec,S_mat,S_val)
 

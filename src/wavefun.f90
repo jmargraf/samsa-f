@@ -614,6 +614,134 @@ end subroutine dia_fock
 
 
 !#############################################
+!#              Diagonalize 1-RDM       
+!#############################################
+subroutine calc_natorbs()
+  use module_data, only      : Dens,NOCoef,NOEps,dim_1e,Spins,S12,nel,NoccA,NoccB
+  use module_io, only        : print_Mat,print_Vec
+  implicit none
+  integer                         :: i,j,lwork,inf
+  double precision, allocatable   :: work(:),temp(:,:)
+  double precision                :: SpinQN,N,Na,Nb,sumocc2
+
+  lwork = dim_1e*(3+dim_1e/2)
+  allocate(work(lwork))
+  allocate(NOCoef(1:dim_1e,1:dim_1e,Spins),NOEps(1:dim_1e,Spins),temp(1:dim_1e,1:dim_1e))
+
+  NOCoef = 0.0d0
+  NOEps  = 0.0d0
+  temp   = 0.0d0
+
+  write(*,*) ""
+  write(*,*) "    Diagonalizing 1-RDM..."
+  write(*,*) ""
+
+!  call Fock_to_MO()
+!  call ort_Fock()
+!  call calc_Dens()
+
+  do i=1,Spins
+    temp = temp + Dens(1:dim_1e,1:dim_1e,i)*2.0d0/dble(Spins) 
+  enddo
+
+  call makeS12()
+
+! S12 = S12 x D x S12
+!  call print_Mat(S12(:,:),dim_1e,3,"S12")
+!  call print_Mat(temp(:,:),dim_1e,4,"temp")
+! D x S12
+  call dgemm('N','N',dim_1e,dim_1e,dim_1e,1.0d0,temp,dim_1e,S12,dim_1e,0.0d0,NOCoef(:,:,1),dim_1e)
+!  call print_Mat(NOCoef(:,:,1),dim_1e,7,"NO Coef")
+  temp = NOCoef(:,:,1)
+! S12 x temp
+  call dgemm('N','N',dim_1e,dim_1e,dim_1e,1.0d0,S12,dim_1e,temp,dim_1e,0.0d0,NOCoef(:,:,1),dim_1e)
+!  call print_Mat(NOCoef(:,:,1),dim_1e,7,"NO Coef")
+
+  deallocate(temp)
+
+!  do i=1,Spins
+!  call print_Mat(Dens(:,:,1),dim_1e,5,"1-RDM")
+  call dsyev('V','U',dim_1e,NOCoef(1:dim_1e,1:dim_1e,1),dim_1e,NOEps(1:dim_1e,1),work,lwork,inf)
+!  call print_Mat(NOCoef(:,:,1),dim_1e,7,"NO Coef")
+!  enddo
+
+!  do i=1,Spins
+  call print_Vec(NOEps(:,1),dim_1e,15,"(U)NO occ. num.")
+!  enddo
+
+  sumocc2 = 0.0d0
+  do i=1,dim_1e
+    sumocc2 = sumocc2 + NOEps(i,1)*NOEps(i,1)
+  enddo
+
+  N = dble(nel)
+  Na = dble(NoccA)
+  Nb = dble(NoccB)
+
+  SpinQN = N*(N+4.0d0)/4.0d0 - Na*Nb - 0.5d0*sumocc2
+
+  write(*,*) "<S**2> = ",SpinQN  
+
+  deallocate(work)
+
+end subroutine calc_natorbs
+
+
+!#############################################
+!#               Make Real S12          
+!#############################################
+subroutine makeS12()
+  use module_data, only      : S12,Sij,dim_1e
+  implicit none
+  integer                         :: i,j,lwork,inf
+  double precision, allocatable   :: work(:)
+  double precision, allocatable   :: S_vec(:,:)
+  double precision, allocatable   :: S_val(:)
+  double precision, allocatable   :: S_mat(:,:)
+  double precision, allocatable   :: temp(:,:)
+
+  lwork = dim_1e*(3+dim_1e/2)
+  allocate(work(lwork),           &
+           S_vec(dim_1e,dim_1e),  &
+           S_mat(dim_1e,dim_1e),  &
+           S_val(dim_1e),         &
+           temp(dim_1e,dim_1e))
+
+!  write(*,*) ""
+!  write(*,*) "    Diagonalizing S..."
+!  write(*,*) ""
+
+  S_vec = Sij
+  call dsyev('V','U',dim_1e,S_vec(1:dim_1e,1:dim_1e),dim_1e,S_val(1:dim_1e),work,lwork,inf)
+
+!  call print_Vec(S_val(:),dim_1e,11,"Ovrlpvalues")
+
+  deallocate(work)
+
+  S_val = S_val**(0.5d0)
+! stretch matrix
+  do i=1,dim_1e
+    do j=1,dim_1e
+      if(i == j)then
+        S_mat(i,j) = S_val(i)
+      else
+        S_mat(i,j) = 0.0d0
+      endif
+    enddo
+  enddo
+
+! S12 = S_vec x S_mat x transpose(S_vec)
+! temp = S_mat x transpose(S_vec) 
+  call dgemm('N','T',dim_1e,dim_1e,dim_1e,1.0d0,S_mat,dim_1e,S_vec,dim_1e,0.0d0,temp,dim_1e)
+! S12 = S_vec x temp 
+  call dgemm('N','N',dim_1e,dim_1e,dim_1e,1.0d0,S_vec,dim_1e,temp,dim_1e,0.0d0,S12,dim_1e)
+
+  deallocate(temp,S_vec,S_mat,S_val)
+
+end subroutine makeS12
+
+
+!#############################################
 !#          Diagonalize Overlap     
 !#############################################
 subroutine dia_S()

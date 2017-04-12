@@ -236,5 +236,82 @@ subroutine trans_full(doprint)
 
 end subroutine trans_full
 
+
+! translate integrals to spin integrated antisymmetrized form
+! the number of spin orbitals nmo is 2*n, with alpha and beta spins alternating
+subroutine trans_ucc(doprint)
+  use module_ints, only          : Index2e
+  use module_data, only          : dim_1e,dim_2e,ERI,Coef,MOI,spins,SMO,AMO
+  use module_data, only          : Fock,Eps,Eps_SO,F_SO
+  use module_wavefun, only       : Fock_to_MO
+  use module_io, only            : print_Vec
+  implicit none
+  integer                       :: p,q,r,s,pr,qs,prqs,ps,qr,psqr
+  integer                       :: nmo
+
+  real                          :: starttime,stoptime,time
+  logical, intent(IN)           :: doprint
+  double precision              :: value1,value2 
+
+  if(doprint)then
+    write(*,*) "    "
+    write(*,*) "    Converting integrals to MO basis ... "
+  endif
+
+  nmo = dim_1e*2
+
+  allocate(AMO(1:nmo,1:nmo,1:nmo,1:nmo),Eps_SO(1:nmo),F_SO(1:nmo,1:nmo))
+
+  AMO = 0.0d0
+
+  call Fock_to_MO()
+
+  do p=0,nmo-1
+!    Eps_SO(p+1) = Eps((p+1)/2,(mod(p,2)+1))
+    Eps_SO(p+1) = Eps(p/2+1,1)
+    do q=0,nmo-1
+      F_SO(p+1,q+1) = 0.0d0
+      if(mod(p,2) == mod(q,2))then
+!        F_SO(p+1,q+1) = Fock((p+1)/2,(q+1)/2,mod(p,2)+1)
+        F_SO(p+1,q+1) =  Fock(p/2+1,q/2+1,1)
+      endif
+      do r=0,nmo-1
+        do s=0,nmo-1
+          call Index2e(p/2,r/2,pr)
+          call Index2e(q/2,s/2,qs)
+          call Index2e(p/2,s/2,ps)
+          call Index2e(q/2,r/2,qr)
+          call Index2e(pr,qs,prqs)
+          call Index2e(ps,qr,psqr)
+          value1 = 0.0d0
+          value2 = 0.0d0
+
+          if((mod(p,2) == mod(r,2)) .and. (mod(q,2) == mod(s,2)))then
+            value1 = MOI(prqs)
+          endif
+
+          if((mod(p,2) == mod(s,2)) .and. (mod(q,2) == mod(r,2)))then
+            value2 = MOI(psqr)
+          endif
+
+          AMO(p+1,q+1,r+1,s+1) = value1 - value2
+
+!          write(*,*) p,q,r,s,value1,value2,AMO(p+1,q+1,r+1,s+1)
+
+        enddo
+      enddo
+    enddo
+  enddo
+
+  call print_Vec(Eps_SO,nmo,6,"Eps_SO")
+
+  if(doprint)then
+    write(*,*) "    ... done "
+    write(*,*) "    "
+  endif
+
+end subroutine trans_ucc
+
+
 end module module_trans
 

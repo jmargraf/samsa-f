@@ -53,6 +53,10 @@ module module_data
   double precision, allocatable                 :: Eps(:,:)           
   double precision, allocatable                 :: Hcore(:,:)       
   double precision, allocatable                 :: Occ(:,:)
+  double precision, allocatable                 :: Eps_SO(:)
+  double precision, allocatable                 :: F_SO(:,:)
+  double precision, allocatable                 :: NOCoef(:,:,:)
+  double precision, allocatable                 :: NOEps(:,:)
 
 ! Integrals
   double precision, allocatable                 :: Sij(:,:)         
@@ -63,7 +67,8 @@ module module_data
 ! MO integrals           
   double precision, allocatable                 :: MOI(:)
   double precision, allocatable                 :: SMO(:,:,:,:)
-           
+  double precision, allocatable                 :: AMO(:,:,:,:)  ! antisymmetrized integrals  
+         
 contains
 
 !#############################################

@@ -8,9 +8,9 @@ program samsa
   use module_energy,  only : calc_Enuc,calc_Embpt2
   use module_ints,    only : calc_Ints,get_Occ
   use module_scf,     only : run_SCF
-  use module_wavefun, only : do_guess,dia_S
-  use module_props,   only : print_Eigen
-  use module_trans,   only : trans_full,transdone
+  use module_wavefun, only : do_guess,dia_S,calc_natorbs
+  use module_props,   only : print_Eigen,pop_Mulliken
+  use module_trans,   only : trans_full,transdone,trans_ucc
   use module_occupy,  only : calc_GKT,run_corrF
   use module_cc,      only : calc_Elccd
   use module_dscf,    only : calc_dSCF,calc_dfrac
@@ -54,6 +54,10 @@ program samsa
 
 ! run properties
   call print_Eigen()
+  call pop_Mulliken()
+
+! calc NOs?
+  call calc_natorbs()
 
 ! run occupation number schemes
   if(doGKT)then
@@ -90,6 +94,10 @@ program samsa
   endif
 
   if(doLCCD)then
+    if(.not.transdone)then
+      call trans_full(.true.)
+    endif
+    call trans_ucc(.true.)
     call calc_Elccd()
   endif
 

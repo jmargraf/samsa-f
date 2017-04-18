@@ -10,8 +10,7 @@ contains
 subroutine calc_dfrac(doprint)
   use module_data,          only : Occ,nOccA,nOccB,dim_1e,Eps,Spins,DropMO,Damp,Fock
   use module_energy,        only : Etot,calc_Embpt2,Embpt2f,Embpt2
-  use module_energy,        only : E_OS,E_SS,E_SSx,E_SSc,E_1,E_1f
-  use module_energy,        only : E_AAx,E_AAc,E_BBx,E_BBc
+  use module_energy,        only : E_1f
   use module_energy,        only : E_AAxf,E_AAcf,E_BBxf,E_BBcf
   use module_energy,        only : E_OSf
   use module_scf,           only : run_SCF

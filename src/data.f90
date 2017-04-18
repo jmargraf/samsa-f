@@ -28,9 +28,11 @@ module module_data
   double precision                              :: Damp = 0.5d0
   double precision                              :: DampTol = 1.0d-7
   logical                                       :: DoDamp = .true.
+  logical                                       :: DoReNorm = .false.
   logical                                       :: DoMBPT2 = .false.
   logical                                       :: DoDCPT2 = .false.
   logical                                       :: DoLCCD  = .false.
+  logical                                       :: DoRDMFT = .false.
   logical                                       :: DoGKT = .false.
   logical                                       :: DoDSCF = .false.
   logical                                       :: DoDFrac = .false.
@@ -934,30 +936,32 @@ end subroutine basis_types
 subroutine print_options()
   implicit none
 
-  write(*,'("    Calc    = ",A12)')      CalcType
-  write(*,'("    Guess   = ",A12)')      Guess
-  write(*,'("    Basis   = ",A12)')      Basis_Set
+  write(*,'("    Calc     = ",A12)')      CalcType
+  write(*,'("    Guess    = ",A12)')      Guess
+  write(*,'("    Basis    = ",A12)')      Basis_Set
 
-  write(*,'("    DoDamp  = ",L12)')      DoDamp
-  write(*,'("    DoMBPT2 = ",L12)')      doMBPT2
-  write(*,'("    DoDCPT2 = ",L12)')      doDCPT2
-  write(*,'("    DoLCCD  = ",L12)')      doLCCD
-  write(*,'("    doGKT   = ",L12)')      doGKT
-  write(*,'("    doDSCF  = ",L12)')      doDSCF
-  write(*,'("    doDFrac = ",L12)')      doDFrac
-  write(*,'("    doDrop  = ",L12)')      doDrop
+  write(*,'("    DoDamp   = ",L12)')      DoDamp
+  write(*,'("    DoMBPT2  = ",L12)')      doMBPT2
+  write(*,'("    DoDCPT2  = ",L12)')      doDCPT2
+  write(*,'("    DoLCCD   = ",L12)')      doLCCD
+  write(*,'("    DoRDMFT  = ",L12)')      doRDMFT
+  write(*,'("    doGKT    = ",L12)')      doGKT
+  write(*,'("    doDSCF   = ",L12)')      doDSCF
+  write(*,'("    doDFrac  = ",L12)')      doDFrac
+  write(*,'("    doDrop   = ",L12)')      doDrop
+  write(*,'("    doReNorm = ",L12)')      doReNorm
 
-  write(*,'("    Charge  = ",I12)')      Charge
-  write(*,'("    Mult    = ",I12)')      Mult
-  write(*,'("    MaxSCF  = ",I12)')      MaxSCF
-  write(*,'("    SemiTyp = ",I12)')      ScaleType
-  write(*,'("    Fract   = ",I12)')      Fract
+  write(*,'("    Charge   = ",I12)')      Charge
+  write(*,'("    Mult     = ",I12)')      Mult
+  write(*,'("    MaxSCF   = ",I12)')      MaxSCF
+  write(*,'("    SemiTyp  = ",I12)')      ScaleType
+  write(*,'("    Fract    = ",I12)')      Fract
 
-  write(*,'("    Econv   = ",F12.6)')    Econv
-  write(*,'("    Dconv   = ",F12.6)')    Dconv
-  write(*,'("    Damping = ",F12.6)')    Damp
-  write(*,'("    DampTol = ",F12.6)')    DampTol
-  write(*,'("    Para    = ",4(F12.6))') Par(1),Par(2),Par(3),Par(4)
+  write(*,'("    Econv    = ",F12.6)')    Econv
+  write(*,'("    Dconv    = ",F12.6)')    Dconv
+  write(*,'("    Damping  = ",F12.6)')    Damp
+  write(*,'("    DampTol  = ",F12.6)')    DampTol
+  write(*,'("    Para     = ",4(F12.6))') Par(1),Par(2),Par(3),Par(4)
 
 end subroutine print_options
 
@@ -1071,6 +1075,10 @@ subroutine parse_option(argument)
   elseif(uargument(1:4)=='LCCD')then
     doLCCD = .true.
 
+  elseif(uargument(1:4)=='RDMFT')then
+    doRDMFT = .true.
+
+
   elseif(uargument(1:6)=='FRACT=')then
     read(UArgument(7:),*) Fract
 !    write(*,*) '    FRACT     = ',Fract
@@ -1095,11 +1103,12 @@ subroutine parse_option(argument)
 
   elseif(uargument(1:9)=='NOSINGLES')then
     doSingles = .false.
-!    write(*,*) '    Not dropping core'
 
   elseif(uargument(1:6)=='SCGKT')then
     doSCGKT = .true.
-!    write(*,*) '    Not dropping core'
+
+  elseif(uargument(1:6)=='RENORM')then
+    doReNorm = .true.
 
   else
     write(*,*) "    Unknown Argument :", uargument

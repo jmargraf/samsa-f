@@ -22,12 +22,12 @@ contains
 !#############################################
 subroutine calc_Embpt2
   use module_data,      only : MOI,Spins,dim_1e,nOccA,nOccB,Eps,SMO,Occ
-  use module_data,      only : DropMO,DoDrop,Fock,DoSingles
+  use module_data,      only : DropMO,DoDrop,Fock,DoSingles,DoReNorm
   use module_ints,      only : Index2e
   use module_wavefun,   only : Fock_to_MO,Fock_to_AO
   implicit none
   integer                   :: iSpin,i,j,a,b,ia,ja,jb,ib,iajb,ibja,MOZero
-  double precision          :: occ_factor
+  double precision          :: occ_factor,occi,occj,occa,occb
 
   Embpt2 = 0.0d0
   E_OS   = 0.0d0
@@ -182,6 +182,10 @@ subroutine calc_Embpt2
     E_AAcf     = 0.0d0
     E_BBxf     = 0.0d0
     E_BBcf     = 0.0d0
+    occi       = 1.0d0
+    occj       = 1.0d0
+    occa       = 1.0d0
+    occb       = 1.0d0
 
     ! Opposite Spin 
     do i=MOZero,dim_1e*2-1,2
@@ -189,11 +193,17 @@ subroutine calc_Embpt2
         do j=MOZero+1,dim_1e*2,2
           do b=MOZero+1,dim_1e*2,2
             occ_factor = (Occ((i+1)/2,1)*(1.0d0-Occ((a+1)/2,1))*Occ(j/2,2)*(1.0d0-Occ(b/2,2)))
+            if(DoReNorm)then
+              occi = Occ((i+1)/2,1)
+              occa = (1.0d0 - Occ((a+1)/2,1))
+              occj = Occ(j/2,2)
+              occb = (1.0d0-Occ(b/2,2))
+            endif
             if (occ_factor==0.0d0) cycle
             if (a == b .or. i == j) cycle
             E_OSf = E_OSf - (SMO(i,a,j,b)*SMO(i,a,j,b))*occ_factor/       &
-                            (Eps((a+1)/2,1)+Eps((b/2),2)                &
-                            -Eps((i+1)/2,1)-Eps((j/2),2))
+                            (occa*Eps((a+1)/2,1)+occb*Eps((b/2),2)        &
+                            -occi*Eps((i+1)/2,1)-occj*Eps((j/2),2))
           enddo
         enddo
       enddo
@@ -204,24 +214,34 @@ subroutine calc_Embpt2
       do a=MOZero,dim_1e*2-1,2
         occ_factor = (Occ((i+1)/2,1)*(1.0d0-Occ((a+1)/2,1)))
 !        write(*,*) i,a,Eps((a+1)/2,1),Eps((i+1)/2,1)
+        if(DoReNorm)then
+          occi = Occ((i+1)/2,1)
+          occa = (1.0d0 - Occ((a+1)/2,1))
+        endif
         if (occ_factor==0.0d0) cycle
         if (doSingles .and. i/=a) then
           E_1f  = E_1f - Fock((i+1)/2,(a+1)/2,1)*Fock((i+1)/2,(a+1)/2,1)*occ_factor*0.5d0/  &
-                         (Eps((a+1)/2,1)-Eps((i+1)/2,1))
+                         (occa*Eps((a+1)/2,1)-occi*Eps((i+1)/2,1))
         endif
         do j=MOZero,dim_1e*2-1,2
           do b=MOZero,dim_1e*2-1,2
             occ_factor = (Occ((i+1)/2,1)*(1.0d0-Occ((a+1)/2,1))*Occ((j+1)/2,1)*(1.0d0-Occ((b+1)/2,1)))
+            if(DoReNorm)then
+              occi = Occ((i+1)/2,1)
+              occa = (1.0d0 - Occ((a+1)/2,1))
+              occj = Occ((j+1)/2,1)
+              occb = (1.0d0-Occ((b+1)/2,1))
+            endif
             if (occ_factor==0.0d0) cycle
             if (a == b .or. i == j) cycle
             E_AAcf = E_AAcf- (SMO(i,a,j,b)*SMO(i,a,j,b))*0.5d0*occ_factor/  &
-                             (Eps((a+1)/2,1)+Eps((b+1)/2,1)                 &
-                             -Eps((i+1)/2,1)-Eps((j+1)/2,1))
+                             (occa*Eps((a+1)/2,1)+occb*Eps((b+1)/2,1)       &
+                             -occi*Eps((i+1)/2,1)-occj*Eps((j+1)/2,1))
 
 
             E_AAxf = E_AAxf+ (SMO(i,a,j,b)*SMO(i,b,j,a))*0.5d0*occ_factor/  &
-                             (Eps((a+1)/2,1)+Eps((b+1)/2,1)                 &
-                             -Eps((i+1)/2,1)-Eps((j+1)/2,1))
+                             (occa*Eps((a+1)/2,1)+occb*Eps((b+1)/2,1)       &
+                             -occi*Eps((i+1)/2,1)-occj*Eps((j+1)/2,1))
           enddo
         enddo
       enddo
@@ -232,24 +252,34 @@ subroutine calc_Embpt2
     do i=MOZero+1,dim_1e*2,2
       do a=MOZero+1,dim_1e*2,2
         occ_factor = (Occ(i/2,2)*(1.0d0-Occ(a/2,2)))
+        if(DoReNorm)then
+          occi = Occ(i/2,2)
+          occa = (1.0d0 - Occ(a/2,2))
+        endif
         if (occ_factor==0.0d0) cycle
         if (doSingles .and. i/=a ) then
           E_1f  = E_1f - Fock(i/2,a/2,2)*Fock(i/2,a/2,2)*occ_factor*0.5d0/  &
-                       (Eps(a/2,2)-Eps(i/2,2))
+                       (occa*Eps(a/2,2)-occi*Eps(i/2,2))
         endif
         do j=MOZero+1,dim_1e*2,2
           do b=MOZero+1,dim_1e*2,2
             occ_factor = (Occ(i/2,2)*(1.0d0-Occ(a/2,2))*Occ(j/2,2)*(1.0d0-Occ(b/2,2)))
+            if(DoReNorm)then
+              occi = Occ(i/2,2)
+              occa = (1.0d0 - Occ(a/2,2))
+              occj = Occ(j/2,2)
+              occb = (1.0d0-Occ(b/2,2))
+            endif
             if (occ_factor==0.0d0) cycle
             if (a == b .or. i == j) cycle
             E_BBcf= E_BBcf- (SMO(i,a,j,b)*SMO(i,a,j,b))*0.5d0*occ_factor/  &
-                            (Eps((a/2),2)+Eps((b/2),2)                     &
-                            -Eps((i/2),2)-Eps((j/2),2))
+                            (occa*Eps((a/2),2)+occb*Eps((b/2),2)           &
+                            -occi*Eps((i/2),2)-occj*Eps((j/2),2))
 
 
             E_BBxf= E_BBxf+ (SMO(i,a,j,b)*SMO(i,b,j,a))*0.5d0*occ_factor/  &
-                            (Eps((a/2),2)+Eps((b/2),2)                     &
-                            -Eps((i/2),2)-Eps((j/2),2))
+                            (occa*Eps((a/2),2)+occb*Eps((b/2),2)           &
+                            -occi*Eps((i/2),2)-occj*Eps((j/2),2))
           enddo
         enddo
       enddo
@@ -259,7 +289,7 @@ subroutine calc_Embpt2
 
   endif
 
-    call Fock_to_AO()
+  call Fock_to_AO()
 
 end subroutine calc_Embpt2
 

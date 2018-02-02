@@ -9,7 +9,7 @@ program samsa
   use module_ints,    only : calc_Ints,get_Occ
   use module_scf,     only : run_SCF
   use module_wavefun, only : do_guess,dia_S,calc_natorbs
-  use module_props,   only : print_Eigen,pop_Mulliken
+  use module_props,   only : print_Eigen,pop_Mulliken,pop_Loewdin
   use module_trans,   only : trans_full,transdone,trans_ucc
   use module_occupy,  only : calc_GKT,run_corrF
   use module_cc,      only : calc_Elccd
@@ -56,6 +56,7 @@ program samsa
 ! run properties
   call print_Eigen()
   call pop_Mulliken()
+  call pop_Loewdin()
 
 ! calc NOs?
   call calc_natorbs()
@@ -105,6 +106,10 @@ program samsa
     call calc_Elccd()
   endif
 
+  if(.true.)then
+    call run_LMPT2()
+  endif
+
   if(doDCPT2)then
     if(.not.transdone)then
       call trans_full(.true.)
@@ -119,7 +124,31 @@ program samsa
 
 end program samsa
 
+subroutine run_LMPT2()
+  use module_energy, only : calc_Elmpt2
+  use module_energy, only : Elmpt2
+  use module_energy, only : E_OS,E_SS,E_SSx,E_SSc,Etot
+!  use module_energy, only : E_AAx,E_AAc,E_BBx,E_BBc
+  use module_data,   only : Spins
+  implicit none
 
+  if(spins==1)then
+    write(*,*) "    "
+    write(*,*) "    Calculating RHF-LMPT(2) correlation energy"
+    write(*,*) "    "
+    call calc_Elmpt2()
+    write(*,*) "    "
+    write(*,'("      E_OS   = ",F12.6)') E_OS
+    write(*,'("      E_SS   = ",F12.6)') E_SS
+    write(*,'("      E_SSx  = ",F12.6)') E_SSx
+    write(*,'("      E_SSc  = ",F12.6)') E_SSc
+    write(*,*) "    "
+    write(*,'("      ELMPT2 = ",F12.6)') Elmpt2
+    write(*,*) "    "
+    write(*,'("      Etotal = ",F12.6)') Elmpt2+Etot
+  endif
+
+end subroutine run_LMPT2
 
 subroutine run_MBPT2()
   use module_energy, only : calc_Embpt2

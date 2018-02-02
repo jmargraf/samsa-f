@@ -6,6 +6,25 @@ module module_constants
   double precision, parameter                 :: eV2ha = 1.0d0/27.21d0
   double precision, parameter                 :: ang2bohr = 1.889725989d0
   double precision, parameter                 :: pi = 3.14159265359d0
+  double precision, parameter                 :: hardness(1:18) = (/ &
+                                                                  0.236306505d0, &
+                                                                  0.461040059d0, &
+                                                                  0.087269386d0, &
+                                                                  0.128511577d0, &
+                                                                  0.169753767d0, &
+                                                                  0.210988607d0, &
+                                                                  0.245586182d0, &
+                                                                  0.293472988d0, &
+                                                                  0.334674752d0, &
+                                                                  0.375975744d0, &
+                                                                  0.089823594d0, &
+                                                                  0.110790151d0, &
+                                                                  0.131749357d0, &
+                                                                  0.152704888d0, &
+                                                                  0.173678795d0, &
+                                                                  0.194634326d0, &
+                                                                  0.215589857d0, &
+                                                                  0.236552738d0 /)
 
 contains
 

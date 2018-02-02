@@ -11,7 +11,7 @@ contains
 !#############################################
 subroutine run_rdmft()
   use module_data, only      : dim_1e,Hcore,NOEps,NOCoef,Coef,Fock
-  use module_wavefun, only   : Fock_to_MO
+  use module_wavefun, only   : Fock_to_MO,Fock_to_AO
   implicit none
   integer                   :: i,j
   double precision          :: E1e,E2ec,E2ex,E2e
@@ -24,7 +24,9 @@ subroutine run_rdmft()
   call AOMat_to_MO()
 
   Coef = NOCoef
+  call Fock_to_AO()
 
+!  Coef = NOCoef
   call Fock_to_MO()
 
   Erdmft = 0.0d0
@@ -47,7 +49,7 @@ subroutine run_rdmft()
     do j=1,dim_1e
 !      E2ec = E2ec + 1.0d0*NOEps(i,1)*NOEps(j,1)*Jmat(i,j,1)
 !      E2ex = E2ex - 0.5d0*NOEps(i,1)*NOEps(j,1)*Kmat(i,j,1)
-      E2e = NOEps(i,1)*NOEps(j,1)*(Fock(i,j,1)-Hcore(i,j))      
+      E2e = E2e + NOEps(i,1)*NOEps(j,1)*(Fock(i,j,1)-Hcore(i,j))      
     enddo
   enddo
 

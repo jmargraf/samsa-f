@@ -583,6 +583,37 @@ end subroutine deort_fock
 
 
 !#############################################
+!#            Orthogonalize Coef
+!#############################################
+subroutine ort_coef()
+  use module_data, only      : Coef,S12,dim_1e,Spins
+  use module_io, only        : print_Mat
+  implicit none
+  integer                         :: i
+  double precision, allocatable   :: temp(:,:)
+
+!  write(*,*) ""
+!  write(*,*) "    orthogonalizing Coef ..."
+!  write(*,*) ""
+
+  allocate(temp(dim_1e,dim_1e))
+
+  do i=1,Spins
+!  $::Coeff = $::S12 x $::Coeff;
+    temp(1:dim_1e,1:dim_1e) = coef(1:dim_1e,1:dim_1e,i)
+    call dgemm('N','N',dim_1e,dim_1e,dim_1e,1.0d0,  &
+                S12(1:dim_1e,1:dim_1e),dim_1e,      &
+                temp(1:dim_1e,1:dim_1e),dim_1e,   &
+                0.0d0,Coef(1:dim_1e,1:dim_1e,i),dim_1e)
+!    call print_Mat(Coef(:,:,i),dim_1e,8,"deort WF")
+  enddo
+
+  deallocate(temp)
+
+end subroutine ort_coef
+
+
+!#############################################
 !#          Diagonalize Fockian     
 !#############################################
 subroutine dia_fock()
@@ -699,6 +730,10 @@ subroutine build_S12()
   double precision, allocatable   :: S_mat(:,:)
   double precision, allocatable   :: temp(:,:)
 
+  if(allocated(S12))then
+    deallocate(S12)
+  endif
+
   lwork = dim_1e*(3+dim_1e/2)
   allocate(work(lwork),            &
            S_vec(dim_1e,dim_1e),   &
@@ -793,7 +828,6 @@ subroutine dia_S()
   deallocate(temp,S_vec,S_mat,S_val)
 
 end subroutine dia_S
-
 
 end module module_wavefun
 

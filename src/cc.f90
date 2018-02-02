@@ -27,8 +27,6 @@ subroutine calc_Elccd
   double precision          :: in1
 
   Elccd  = 0.0d0
-  nmo = 2*dim_1e
-  MOZero = 1
 
 !  call Fock_to_MO()
 
@@ -37,12 +35,16 @@ subroutine calc_Elccd
     write(*,*) "    Calculating RHF-LCCD correlation energy"
     write(*,*) "    "
 
+    nmo = dim_1e
+    MOZero = 1
+
+
     if(DoDrop)then
-      MOZero = 2*DropMO+1
+      MOZero = DropMO+1
     else
       MOZero = 1
     endif
-    nOcc =  2*nOccA
+    nOcc =  nOccA
 
     allocate(t2(1:nmo,1:nmo,1:nmo,1:nmo),  &
           t2old(1:nmo,1:nmo,1:nmo,1:nmo))
@@ -64,27 +66,24 @@ subroutine calc_Elccd
 !           [ + 1.0 ] * v ( p3 p4 h1 h2 )
             in1 = 1.0d0 * AMO(h1,h2,p3,p4)
 
-!           [ - 1.0 + 1.0 * P( p3 p4 h1 h2 => p3 p4 h2 h1 ) ] * Sum ( h5 ) * f ( h5 h1 ) * t ( p3 p4 h5 h2 )
+!           [ - 1.0 + 1.0 * P( p4 p3 h1 h2 => p3 p4 h1 h2 ) ] * Sum ( p5 ) * f ( p4 p5 ) * t ( p5 p3 h1 h2 ) done
+            do p5 = nOcc+1,nmo
+              in1 = in1 + 1.0d0 * F_SO(p4,p5) * t2old(p3,p5,h1,h2)
+              in1 = in1 + 1.0d0 * F_SO(p3,p5) * t2old(p4,p5,h2,h1)
+            enddo
+
+!           [ - 1.0 + 1.0 * P( p3 p4 h1 h2 => p3 p4 h2 h1 ) ] * Sum ( h5 ) * f ( h5 h1 ) * t ( p3 p4 h5 h2 ) done
             do h5 = MOZero,nOcc
-              in1 = in1 - 1.0d0 * F_SO(h5,h1) * t2old(p3,p4,h5,h2)
-              in1 = in1 + 1.0d0 * F_SO(h5,h2) * t2old(p3,p4,h5,h1)
-!              in1 = in1 - 1.0d0 * Eps_SO(h1) * t2old(p3,p4,h1,h2)
-!              in1 = in1 + 1.0d0 * Eps_SO(h2) * t2old(p3,p4,h2,h1)
+              !write(*,*) F_SO(h5,h2), F_SO(h5,h1)
+              in1 = in1 - 1.0d0 * F_SO(h5,h2) * t2old(p3,p4,h1,h5)
+              in1 = in1 - 1.0d0 * F_SO(h5,h1) * t2old(p4,p3,h2,h5)
             enddo
 
-
-!           [ - 1.0 + 1.0 * P( p4 p3 h1 h2 => p3 p4 h1 h2 ) ] * Sum ( p5 ) * f ( p4 p5 ) * t ( p5 p3 h1 h2 )
-            do p5 = nOcc+1,nmo 
-              in1 = in1 - 1.0d0 * F_SO(p4,p5) * t2old(p5,p3,h1,h2)
-              in1 = in1 + 1.0d0 * F_SO(p3,p5) * t2old(p5,p4,h1,h2)
-!              in1 = in1 - 1.0d0 * Eps_SO(p4) * t2old(p4,p3,h1,h2)
-!              in1 = in1 + 1.0d0 * Eps_SO(p3) * t2old(p3,p4,h1,h2)
-            enddo
-
-!           [ + 0.5 ] * Sum ( h5 h6 ) * t ( p3 p4 h5 h6 ) * v ( h5 h6 h1 h2 )
+!           [ + 0.5 ] * Sum ( h5 h6 ) * t ( p3 p4 h5 h6 ) * v ( h5 h6 h1 h2 ) done
             do h5 = MOZero,nOcc
               do h6 = MOZero,nOcc
-                in1 = in1 + 0.5d0 * t2old(p3,p4,h5,h6) * AMO(h1,h2,h5,h6)
+                in1 = in1 + 0.5d0 * t2old(p3,p4,h5,h6) * AMO(h5,h6,h1,h2)
+                in1 = in1 + 0.5d0 * t2old(p4,p3,h5,h6) * AMO(h5,h6,h2,h1)
               enddo
             enddo
 
@@ -92,20 +91,28 @@ subroutine calc_Elccd
 !            - 1.0 * P( p3 p4 h2 h1 => p4 p3 h2 h1 ) 
 !            - 1.0 * P( p3 p4 h2 h1 => p3 p4 h1 h2 ) 
 !            + 1.0 * P( p3 p4 h2 h1 => p4 p3 h1 h2 ) ] 
-!          * Sum ( p5 h6 ) * t ( p5 p3 h6 h2 ) * v ( h6 p4 h1 p5 )
+!          * Sum ( p5 h6 ) * t ( p5 p3 h6 h2 ) * v ( h6 p4 h1 p5 ) done
             do p5 = nOcc+1,nmo
-              do h6 = MOZero,nOcc
-                in1 = in1 + 1.0d0 * t2old(p5,p3,h6,h2) * AMO(h6,p4,h1,p5)
-                in1 = in1 - 1.0d0 * t2old(p5,p4,h6,h2) * AMO(h6,p3,h1,p5)
-                in1 = in1 - 1.0d0 * t2old(p5,p3,h6,h1) * AMO(h6,p4,h2,p5)
-                in1 = in1 + 1.0d0 * t2old(p5,p4,h6,h1) * AMO(h6,p3,h2,p5)
+              do h5 = MOZero,nOcc
+                in1 = in1 + 2.0d0 * t2old(p3,p5,h1,h5) * AMO(h5,p4,p5,h2)
+                in1 = in1 + 2.0d0 * t2old(p4,p5,h2,h5) * AMO(h5,p3,p5,h1)
+
+                in1 = in1 - 1.0d0 * t2old(p5,p4,h1,h5) * AMO(h5,p4,p5,h2)
+                in1 = in1 - 1.0d0 * t2old(p5,p3,h2,h5) * AMO(h5,p3,p5,h1)
+
+                in1 = in1 - 1.0d0 * t2old(p3,p5,h5,h2) * AMO(h5,p4,h1,p5)
+                in1 = in1 - 1.0d0 * t2old(p4,p5,h5,h1) * AMO(h5,p3,h2,p5)
+
+                in1 = in1 - 1.0d0 * t2old(p3,p5,h1,h5) * AMO(h5,p4,h2,p5)
+                in1 = in1 - 1.0d0 * t2old(p4,p5,h2,h5) * AMO(h5,p3,h1,p5)
               enddo
             enddo
 
-!           [ + 0.5 ] * Sum ( p5 p6 ) * t ( p5 p6 h1 h2 ) * v ( p3 p4 p5 p6 )
+!           [ + 0.5 ] * Sum ( p5 p6 ) * t ( p5 p6 h1 h2 ) * v ( p3 p4 p5 p6 ) done
             do p5 = nOcc+1,nmo
               do p6 = nOcc+1,nmo
                 in1 = in1 + 0.5d0 * t2old(p5,p6,h1,h2) * AMO(p3,p4,p5,p6)
+                in1 = in1 + 0.5d0 * t2old(p5,p6,h2,h1) * AMO(p4,p3,p5,p6)
               enddo
             enddo
 
@@ -135,6 +142,7 @@ subroutine calc_Elccd
             Dijab = (Eps_SO(p3) + Eps_SO(p4) - Eps_SO(h1) - Eps_SO(h2))
 !            write(*,*) "Dijab",p3,p4,h1,h2,Dijab
             if(t2(p3,p4,h1,h2) /= 0.0d0)then
+
               Elccd = Elccd - 0.25d0*t2(p3,p4,h1,h2)*AMO(h1,h2,p3,p4)/Dijab
             endif
           enddo

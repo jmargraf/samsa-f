@@ -181,6 +181,10 @@ subroutine check_Conv(DoPrint)
       write(*,*) " "
       write(*,*) "    SCF converged (hurra)!"
       write(*,*) " "
+      !if(.true.)then
+      !  call print_TB()
+      !endif
+      !call print_Mat(Fock(:,:,1),dim_1e,7,"AO Fock")
     endif
 !    write(*,*) "         Eelec=",Eelec
 !    write(*,*) "    Final Etot=",Etot
@@ -188,6 +192,64 @@ subroutine check_Conv(DoPrint)
   endif
 
 end subroutine check_Conv
+
+
+subroutine print_TB()
+  use module_data,      only : dim_1e,Fock,Bastype,Basis,atom,xyz,DropMO,Sij
+  implicit none
+  integer :: i,j,MOZero
+  double precision :: rx, ry, rz, absr
+  character(len=1) :: angmomi,angmomj   
+
+!  MOZero = DropMO + 1
+
+  write(*,*) "atomA    atomB    Bastype    Sij    Fij    rx     ry     rz     |r|   "
+
+  do i=1,dim_1e
+    if((Bastype(i)==1) .and. (atom(Basis(i))/="H") ) cycle
+    do j=i,dim_1e
+        if((Bastype(j)==1) .and. (atom(Basis(j))/="H") ) cycle
+        if(Bastype(i)==1)then
+          angmomi = "s"
+        elseif (Bastype(i)==2)then
+          angmomi = "s"
+        elseif (Bastype(i)==3)then
+          angmomi = "p"
+        else
+          angmomi = "x"
+        endif
+
+        if(Bastype(j)==1)then
+          angmomj = "s"
+        elseif (Bastype(j)==2)then
+          angmomj = "s"
+        elseif (Bastype(j)==3)then
+          angmomj = "p"
+        else
+          angmomj = "x"
+        endif
+
+        rx = xyz(Basis(i),1) - xyz(Basis(j),1)
+        ry = xyz(Basis(i),2) - xyz(Basis(j),2)
+        rz = xyz(Basis(i),3) - xyz(Basis(j),3)
+
+        absr = sqrt(rx*rx+ry*ry+rz*rz)
+
+        if (absr==0.0d0) cycle
+
+        rx = rx/absr
+        ry = ry/absr
+        rz = rz/absr
+
+        write(*,*) atom(Basis(i)),Basis(i),atom(Basis(j)),Basis(j),angmomi,angmomj,Sij(i,j),Fock(i,j,1),rx,ry,rz,absr
+
+    enddo
+  enddo
+
+  !call print_Mat(Fock(:,:,1),dim_1e,7,"AO Fock")
+
+end subroutine print_TB
+
 
 end module module_scf
 

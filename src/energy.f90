@@ -10,10 +10,12 @@ module module_energy
   double precision                            :: Embpt2f  = 0.0d0
   double precision                            :: Edcpt2   = 0.0d0
   double precision                            :: Edcpt2f  = 0.0d0
+  double precision                            :: Elmpt2   = 0.0d0
   double precision                            :: E_1,E_1f,E_OS,E_OSf,E_SS,E_SSx,E_SSc
   double precision                            :: E_AAx,E_AAc,E_BBx,E_BBc
   double precision                            :: E_AAxf,E_AAcf,E_BBxf,E_BBcf
   double precision                            :: E1e, E2e
+  double precision, allocatable               :: LMmat(:,:,:)
 
 contains
 
@@ -292,6 +294,158 @@ subroutine calc_Embpt2
   call Fock_to_AO()
 
 end subroutine calc_Embpt2
+
+
+!#############################################
+!#            Calculate E_lmpt2
+!#############################################
+subroutine calc_Elmpt2
+  use module_data,      only : MOI,Spins,dim_1e,nOccA,nOccB,Eps,Occ,scaleOS,scaleSS
+  use module_data,      only : DropMO,DoDrop,Fock,DoSingles,scaleJ,scaleK
+  use module_ints,      only : Index2e
+  use module_wavefun,   only : Fock_to_MO,Fock_to_AO
+  implicit none
+  integer                   :: iSpin,i,j,a,b,MOZero
+  double precision          :: moJ,moK
+!  double precision          :: occ_factor,occi,occj,occa,occb
+
+  Elmpt2 = 0.0d0
+  E_OS   = 0.0d0
+  E_SS   = 0.0d0
+  E_SSx  = 0.0d0
+  E_SSc  = 0.0d0
+
+  MOZero = 1
+
+  call calc_lmmat()
+
+  if(spins==1)then
+!    write(*,*) "    "
+!    write(*,*) "    Calculating RHF-LMPT(2) correlation energy"
+!    write(*,*) "    "
+
+    if(DoDrop)then
+      MOZero = DropMO+1
+    else
+      MOZero = 1
+    endif
+
+    do i=MOZero,nOccA
+      do a=nOccA+1,dim_1e
+
+        do j=MOZero,nOccA
+          do b=nOccA+1,dim_1e
+            moJ = 0.0d0
+            moK = 0.0d0
+            call calc_lmint(i,a,j,b,scaleJ,moJ)
+            call calc_lmint(i,b,j,a,scaleK,moK)
+
+            E_OS  = E_OS  - (moJ*moJ)/                 &
+                            (Eps(a,1)+Eps(b,1)-Eps(i,1)-Eps(j,1))
+
+            E_SS  = E_SS  - (moJ*(moJ-moK))/           &
+                            (Eps(a,1)+Eps(b,1)-Eps(i,1)-Eps(j,1))
+
+            E_SSx = E_SSx + (moJ*moK)/                 &
+                            (Eps(a,1)+Eps(b,1)-Eps(i,1)-Eps(j,1))
+
+            E_SSc = E_SSc - (moJ*moJ)/                 &
+                            (Eps(a,1)+Eps(b,1)-Eps(i,1)-Eps(j,1))
+
+          enddo
+        enddo
+      enddo
+    enddo
+
+    Elmpt2 = scaleOS*E_OS + scaleSS*E_SS
+
+  endif
+
+  deallocate(LMmat)
+
+end subroutine calc_Elmpt2
+
+!#############################################
+!#            Calculate lmint
+!#############################################
+subroutine calc_lmint(p,q,r,s,alp,integral)
+  use module_data,          only : nAtoms,atom
+  use module_constants,     only : hardness,coreq
+  implicit none
+  integer, intent(in)           :: p,q,r,s
+  double precision, intent(in)  :: alp
+  double precision, intent(out) :: integral
+  integer                       :: A,B,ZA,ZB
+  double precision              :: eta ! average hardness
+  double precision              :: Gam
+
+  integral = 0.0d0
+
+  do A=1,nAtoms
+    do B=1,nAtoms
+      call coreq(atom(A),ZA)
+      call coreq(atom(B),ZB)
+      eta = 0.5d0*(hardness(ZA)+hardness(ZB))
+      call calc_klopman(A,B,eta,alp,Gam)
+      integral = integral + LMmat(p,q,A)*LMmat(r,s,B)*Gam
+    enddo
+  enddo
+
+end subroutine calc_lmint
+
+
+!#############################################
+!#         Calculate Klopman Damping
+!#############################################
+subroutine calc_klopman(A,B,eta,alp,Gam)
+  use module_data,          only : rAB
+  implicit none
+  integer, intent(in)           :: A,B
+  double precision, intent(in)  :: eta,alp
+  double precision, intent(out) :: Gam
+
+!  Gam = 1.0d0/(rAB(A,B)+(1.0d0/eta))
+  Gam = (1.0d0/( (rAB(A,B)**alp) + (eta**(-alp)) ))**(1.0d0/alp)
+
+end subroutine calc_klopman
+
+
+!#############################################
+!#    Calculate transition density matrix
+!#############################################
+subroutine calc_lmmat()
+  use module_data,             only : natoms,dim_1e,Spins,Basis,Coef
+  use module_data,             only : atom
+  use module_wavefun,          only : build_S12,ort_coef,deort_fock
+  use module_io,               only : print_Mat
+  implicit none
+  integer                         :: i,j,k,iSpin,A
+
+  allocate(LMmat(dim_1e,dim_1e,nAtoms))
+
+  call build_S12()
+  call ort_coef()
+
+
+  do iSpin=1,Spins
+    do A=1,nAtoms
+
+      do i=1,dim_1e !MO
+        do j=1,dim_1e !MO
+          LMmat(i,j,A) = 0.0d0
+          do k=1,dim_1e !AO
+            if(Basis(k)/=A) cycle
+            LMmat(i,j,A) = LMmat(i,j,A) + Coef(k,i,iSpin)*Coef(k,j,iSpin) *2.0d0/Spins
+          enddo
+        enddo
+      enddo
+      !call print_Mat(LMmat(:,:,A),dim_1e,22,"Loewdin Transition Density Matrix")
+    enddo
+  enddo
+
+  call deort_fock()
+
+end subroutine calc_lmmat
 
 
 !#############################################
@@ -574,6 +728,7 @@ subroutine calc_Enuc()
   Enuc = 0.0d0
   do i=1,natoms
     call CoreQ(atom(i),q1)
+    rAB(i,i)=0.0d0
     do j=i+1,natoms
       call CoreQ(atom(j),q2)
       rAB(i,j) = sqrt((xyz(i,1)-xyz(j,1))**2+ &
@@ -582,6 +737,7 @@ subroutine calc_Enuc()
 !      write(*,*) "q1 q2: ",q1,q2
       Enuc = Enuc + (dble(q1)*dble(q2))/rAB(i,j)
       write(*,*) "    rAB ",atom(i),i,atom(j),j," = ",rAB(i,j)
+      rAB(j,i)=rAB(i,j)
     enddo
   enddo
 

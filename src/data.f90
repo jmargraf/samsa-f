@@ -13,7 +13,6 @@ module module_data
 
 ! Basis set details
   integer, allocatable                          :: Basis(:)
-!  character(len=3), allocatable                 :: bastype(:)
   integer, allocatable                          :: Bastype(:)
   character(len=3)                              :: basis_set = "min"
 
@@ -45,6 +44,10 @@ module module_data
   double precision                              :: Par(4) = 0.0d0
   integer                                       :: scaletype = 1
   integer                                       :: DropMO = 0
+  double precision                              :: scaleJ = 1.0d0
+  double precision                              :: scaleK = 1.0d0
+  double precision                              :: scaleSS = 1.0d0
+  double precision                              :: scaleOS = 1.0d0
 
 ! SCF matrices
   double precision, allocatable                 :: Fock(:,:,:)  
@@ -67,6 +70,7 @@ module module_data
   double precision, allocatable                 :: Vij(:,:)         
   double precision, allocatable                 :: Tij(:,:)         
   double precision, allocatable                 :: ERI(:)      
+  double precision, allocatable                 :: Loew(:,:,:)
 ! MO integrals           
   double precision, allocatable                 :: MOI(:)
   double precision, allocatable                 :: SMO(:,:,:,:)
@@ -298,7 +302,7 @@ subroutine dimensions()
     enddo
   endif
 
-  allocate(bastype(dim_1e),basis(dim_1e))
+  allocate(Bastype(dim_1e),basis(dim_1e))
   call basis_types()
 
 ! Dimension of 2e Matrices
@@ -1005,6 +1009,18 @@ subroutine parse_option(argument)
     DoDamp = .true.
 !    write(*,*) '    DAMP      = ',DAMP
 
+  elseif(uargument(1:7)=='SCALEJ=')then
+    read(UArgument(8:),*) scaleJ
+
+  elseif(uargument(1:7)=='SCALEK=')then
+    read(UArgument(8:),*) scaleK
+
+  elseif(uargument(1:8)=='SCALEOS=')then
+    read(UArgument(9:),*) scaleOS
+
+  elseif(uargument(1:8)=='SCALESS=')then
+    read(UArgument(9:),*) scaleSS
+
   elseif(uargument(1:8)=='DAMPTOL=')then
     read(UArgument(9:),*) DAMPTOL
     DoDamp = .true.
@@ -1075,7 +1091,7 @@ subroutine parse_option(argument)
   elseif(uargument(1:4)=='LCCD')then
     doLCCD = .true.
 
-  elseif(uargument(1:4)=='RDMFT')then
+  elseif(uargument(1:5)=='RDMFT')then
     doRDMFT = .true.
 
 

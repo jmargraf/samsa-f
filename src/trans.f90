@@ -247,7 +247,7 @@ subroutine trans_ucc(doprint)
   use module_io, only            : print_Vec
   implicit none
   integer                       :: p,q,r,s,pr,qs,prqs,ps,qr,psqr
-  integer                       :: nmo
+  integer                       :: nmo,nso
 
   real                          :: starttime,stoptime,time
   logical, intent(IN)           :: doprint
@@ -255,14 +255,15 @@ subroutine trans_ucc(doprint)
 
   if(doprint)then
     write(*,*) "    "
-    write(*,*) "    Converting integrals to MO basis ... "
+    write(*,*) "    Converting integrals to spin MO basis ... "
   endif
 
-  if(spins==1)then
+  if(.false.)then!spins==1)then
 
     nmo = dim_1e
+    nso = dim_1e*2
 
-    allocate(AMO(1:nmo,1:nmo,1:nmo,1:nmo),Eps_SO(1:nmo),F_SO(1:nmo,1:nmo))
+    allocate(AMO(1:nso,1:nso,1:nso,1:nso),Eps_SO(1:nso),F_SO(1:nso,1:nso))
 
     AMO = 0.0d0
 
@@ -270,19 +271,28 @@ subroutine trans_ucc(doprint)
 
     do p=0,nmo-1
       Eps_SO(p+1) = Eps(p+1,1)
+      Eps_SO(p+2) = Eps(p+1,1)
       do q=0,nmo-1
         F_SO(p+1,q+1) =  Fock(p+1,q+1,1)
+        F_SO(p+2,q+2) =  Fock(p+1,q+1,1)
         do r=0,nmo-1
           do s=0,nmo-1
             call Index2e(p,r,pr)
             call Index2e(q,s,qs)
-            !call Index2e(p,s,ps)
-            !call Index2e(q,r,qr)
+            call Index2e(p,s,ps)
+            call Index2e(q,r,qr)
             call Index2e(pr,qs,prqs)
-            !call Index2e(ps,qr,psqr)
-            !value1 = 0.0d0
+            call Index2e(ps,qr,psqr)
 
-            AMO(p+1,q+1,r+1,s+1) = MOI(prqs)
+            value1 = MOI(prqs)
+            value2 = MOI(psqr)
+
+            AMO(p+1,q+1,r+1,s+1) = value1 - value2
+            AMO(p+2,q+2,r+2,s+2) = value1 - value2
+            AMO(p+2,q+1,r+2,s+1) = value1 - value2
+            AMO(p+1,q+2,r+1,s+2) = value1 - value2
+
+            !write(*,*) p,q,r,s,AMO(p+1,q+1,r+1,s+1)
 
           enddo
         enddo
@@ -290,7 +300,7 @@ subroutine trans_ucc(doprint)
     enddo
 
 
-  elseif(spins== 2)then
+  elseif(.true.)then
 
     nmo = dim_1e*2
 
@@ -301,12 +311,10 @@ subroutine trans_ucc(doprint)
     call Fock_to_MO()
 
     do p=0,nmo-1
-!      Eps_SO(p+1) = Eps((p+1)/2,(mod(p,2)+1))
       Eps_SO(p+1) = Eps(p/2+1,1)
       do q=0,nmo-1
         F_SO(p+1,q+1) = 0.0d0
         if(mod(p,2) == mod(q,2))then
-!          F_SO(p+1,q+1) = Fock((p+1)/2,(q+1)/2,mod(p,2)+1)
           F_SO(p+1,q+1) =  Fock(p/2+1,q/2+1,1)
         endif
         do r=0,nmo-1

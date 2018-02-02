@@ -1,6 +1,6 @@
 COMP = gfortran
 #COMP = ifort 
-FLAGS = -fopenmp 
+FLAGS = -fopenmp -O3 
 #FLAGS = 
 #BLASLIB = -lblas
 MKLLIB = -lblas -llapack

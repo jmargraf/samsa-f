@@ -258,49 +258,7 @@ subroutine trans_ucc(doprint)
     write(*,*) "    Converting integrals to spin MO basis ... "
   endif
 
-  if(.false.)then!spins==1)then
-
-    nmo = dim_1e
-    nso = dim_1e*2
-
-    allocate(AMO(1:nso,1:nso,1:nso,1:nso),Eps_SO(1:nso),F_SO(1:nso,1:nso))
-
-    AMO = 0.0d0
-
-    call Fock_to_MO()
-
-    do p=0,nmo-1
-      Eps_SO(p+1) = Eps(p+1,1)
-      Eps_SO(p+2) = Eps(p+1,1)
-      do q=0,nmo-1
-        F_SO(p+1,q+1) =  Fock(p+1,q+1,1)
-        F_SO(p+2,q+2) =  Fock(p+1,q+1,1)
-        do r=0,nmo-1
-          do s=0,nmo-1
-            call Index2e(p,r,pr)
-            call Index2e(q,s,qs)
-            call Index2e(p,s,ps)
-            call Index2e(q,r,qr)
-            call Index2e(pr,qs,prqs)
-            call Index2e(ps,qr,psqr)
-
-            value1 = MOI(prqs)
-            value2 = MOI(psqr)
-
-            AMO(p+1,q+1,r+1,s+1) = value1 - value2
-            AMO(p+2,q+2,r+2,s+2) = value1 - value2
-            AMO(p+2,q+1,r+2,s+1) = value1 - value2
-            AMO(p+1,q+2,r+1,s+2) = value1 - value2
-
-            !write(*,*) p,q,r,s,AMO(p+1,q+1,r+1,s+1)
-
-          enddo
-        enddo
-      enddo
-    enddo
-
-
-  elseif(.true.)then
+  if(spins==1)then
 
     nmo = dim_1e*2
 
@@ -339,6 +297,55 @@ subroutine trans_ucc(doprint)
             AMO(p+1,q+1,r+1,s+1) = value1 - value2
 
 !            write(*,*) p,q,r,s,value1,value2,AMO(p+1,q+1,r+1,s+1)
+
+          enddo
+        enddo
+      enddo
+    enddo
+
+    call print_Vec(Eps_SO,nmo,6,"Eps_SO")
+
+  elseif(spins==2)then
+
+    nmo = dim_1e*2
+
+    allocate(AMO(1:nmo,1:nmo,1:nmo,1:nmo),Eps_SO(1:nmo),F_SO(1:nmo,1:nmo))
+
+    AMO = 0.0d0
+
+    call Fock_to_MO()
+    write(*,*) '  !conversion'
+
+    do p=1,nmo
+      if((mod(p,2) == 1))then
+        Eps_SO(p) = Eps((p+1)/2,1)
+      else
+        Eps_SO(p) = Eps(p/2,2)
+      endif
+      write(*,*) '  !eps'
+
+      do q=1,nmo
+        F_SO(p,q) = 0.0d0
+        if(mod(p,2) == mod(q,2) .and. mod(p,2) == 1)then
+          F_SO(p,q) =  Fock((p+1)/2,(q+1)/2,1)
+        elseif(mod(p,2) == mod(q,2) .and. mod(p,2) == 0)then
+          F_SO(p,q) =  Fock(p/2,q/2,2)
+        endif
+
+        do r=1,nmo
+          do s=1,nmo
+            value1 = 0.0d0
+            value2 = 0.0d0
+
+            if((mod(p,2) == mod(r,2)) .and. (mod(q,2) == mod(s,2)))then
+              value1 = SMO(p,r,q,s)
+            endif
+
+            if((mod(p,2) == mod(s,2)) .and. (mod(q,2) == mod(r,2)))then
+              value2 = SMO(p,s,q,r)
+            endif
+
+            AMO(p,q,r,s) = value1 - value2
 
           enddo
         enddo

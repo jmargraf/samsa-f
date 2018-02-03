@@ -4,6 +4,8 @@ module module_cc
 ! Energies           
   double precision                            :: Elccd    = 0.0d0
   double precision, allocatable               :: t2(:,:,:,:),t2old(:,:,:,:)
+  double precision, allocatable               :: SO_Occ(:)
+
 !  integer                                     :: In4
 
 contains
@@ -30,8 +32,6 @@ subroutine calc_Elccd
   double precision          :: in1
 
   Elccd  = 0.0d0
-
-!  call Fock_to_MO()
 
   if(spins==1)then
     write(*,*) "    "
@@ -148,9 +148,111 @@ subroutine calc_Elccd
     write(*,*) "    Calculating UHF-LCCD correlation energy"
     write(*,*) "    "
 
+    allocate(SO_Occ(1:dim_1e*2))
+
+    nmo = dim_1e*2
+    MOZero = 1
+
+    do i=2,nmo,2
+      SO_Occ(i-1) = Occ(i/2,1)
+      SO_Occ(i) = Occ(i/2,2)
+    enddo
+
+    if(DoDrop)then
+      MOZero = DropMO*2+1
+    else
+      MOZero = 1
+    endif
+    nOcc =  nOccA*2
+
+    allocate(t2(1:nmo,1:nmo,1:nmo,1:nmo),  &
+          t2old(1:nmo,1:nmo,1:nmo,1:nmo))
+
+    t2 = 0.0d0
+    t2old = 0.0d0
+    Dijab = 1.0d0
+
+  do iT2=1,30 ! T amplitude loop
+    Elccd  = 0.0d0
+    t2old  = t2 !R0.5d0*(t2+t2old) ! uses mixing
+
+    !T2 equations
+    !Nocc version
+    do i=MOZero,nmo
+      do j=MOZero,nmo
+        do a=MOZero,nmo
+          do b=MOZero,nmo
+            if((SO_Occ(a) /= 0.0) .or. (SO_Occ(b) /= 0.0))then
+              cycle
+            elseif((SO_Occ(i) /= 1.0) .or. (SO_Occ(j) /= 1.0))then
+              cycle
+            endif
+
+            Dijab = (Eps_SO(i) + Eps_SO(j) - Eps_SO(a) - Eps_SO(b))
+
+!           [ + 1.0 ] * v ( p3 p4 h1 h2 )
+            in1 = 1.0d0 * AMO(a,b,i,j)
+
+!           [ + 0.5 ] * Sum ( p5 p6 ) * t ( p5 p6 h1 h2 ) * v ( p3 p4 p5 p6 ) done
+            do c = MOZero,nmo
+              do d = MOZero,c-1
+                if((SO_Occ(c) /= 0.0) .or. (SO_Occ(d) /= 0.0))then
+                  cycle
+                endif
+                in1 = in1 + 1.0d0 * t2old(c,d,i,j) * AMO(a,b,c,d)
+              enddo
+            enddo
+
+!           [ + 0.5 ] * Sum ( h5 h6 ) * t ( p3 p4 h5 h6 ) * v ( h5 h6 h1 h2 ) done
+            do k = MOZero,nmo
+              do l = MOZero,k-1
+                if((SO_Occ(k) /= 1.0) .or. (SO_Occ(l) /= 1.0))then
+                  cycle
+                endif
+                in1 = in1 + 1.0d0 * t2old(a,b,k,l) * AMO(k,l,i,j)
+              enddo
+            enddo
+
+!          * Sum ( p5 h6 ) * t ( p5 p3 h6 h2 ) * v ( h6 p4 h1 p5 ) done
+            do c = MOZero,nmo
+              do k = MOZero,nmo
+                if((SO_Occ(c) /= 0.0) .or. (SO_Occ(k) /= 1.0))then
+                  cycle
+                endif
+                in1 = in1 - 1.0d0 * t2old(a,c,i,k) * AMO(k,b,j,c)
+                in1 = in1 + 1.0d0 * t2old(b,c,i,k) * AMO(k,a,j,c)
+                in1 = in1 + 1.0d0 * t2old(a,c,j,k) * AMO(k,b,i,c)
+                in1 = in1 - 1.0d0 * t2old(b,c,j,k) * AMO(k,a,i,c)
+              enddo
+            enddo
+
+            t2(a,b,i,j) =  1.0d0*in1/Dijab
+
+          enddo
+        enddo
+      enddo
+    enddo
+
+    Elccd = 0.0d0
+!    E_2 = 0.0d0
+!    E_2OS = 0.0d0
+!    E_2SS = 0.0d0
+
+    do i=MOZero,nOcc
+      do j=MOZero,i-1
+        do a=nOcc+1,nmo
+          do b=nOcc+1,a-1
+            Elccd = Elccd + 1.0d0*t2(a,b,i,j)*AMO(i,j,a,b)
+          enddo
+        enddo
+      enddo
+    enddo
+
+    write(*,*) "      LCCD: ",iT2,Elccd
+
+  enddo ! t2 loop
   endif
 
-!  call Fock_to_AO()
 
 contains
 

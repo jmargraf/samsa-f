@@ -314,7 +314,6 @@ subroutine trans_ucc(doprint)
     AMO = 0.0d0
 
     call Fock_to_MO()
-    write(*,*) '  !conversion'
 
     do p=1,nmo
       if((mod(p,2) == 1))then
@@ -322,7 +321,6 @@ subroutine trans_ucc(doprint)
       else
         Eps_SO(p) = Eps(p/2,2)
       endif
-      write(*,*) '  !eps'
 
       do q=1,nmo
         F_SO(p,q) = 0.0d0

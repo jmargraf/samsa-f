@@ -2,7 +2,7 @@ module module_cc
   implicit none
 
 ! Energies           
-  double precision                            :: Elccd    = 0.0d0
+  double precision                            :: Eccd    = 0.0d0
   double precision, allocatable               :: t2(:,:,:,:),t2old(:,:,:,:)
   double precision, allocatable               :: SO_Occ(:)
 
@@ -11,16 +11,16 @@ module module_cc
 contains
 
 !#############################################
-!#         Calculate Linearized CC
+!#         Calculate CC doubles
 !#############################################
-subroutine calc_Elccd
+subroutine calc_Eccd(CCD)
   use module_data,      only : MOI,Spins,dim_1e,nOccA,nOccB,Eps,SMO,Occ
   use module_data,      only : DropMO,DoDrop,Fock,DoSingles,dim_1e,AMO
   use module_data,      only : Eps_SO,F_SO
   use module_ints,      only : Index2e
   use module_wavefun,   only : Fock_to_MO,Fock_to_AO
   implicit none
-  logical                   :: CCD = .true.
+  logical                   :: CCD 
   integer                   :: iSpin,MOZero,iT2
   integer                   :: p3,p4,h1,h2,h5,h6,p5,p6
   integer                   :: i,j,a,b 
@@ -36,7 +36,7 @@ subroutine calc_Elccd
   double precision          :: deltaE = 99.0d0
   double precision          :: in1,in2
 
-  Elccd  = 0.0d0
+  Eccd  = 0.0d0
 
   if(spins==1)then
     write(*,*) "    "
@@ -59,11 +59,11 @@ subroutine calc_Elccd
     t2 = 0.0d0
     t2old = 0.0d0
     Dijab = 1.0d0
-    Elccd = 0.0d0
+    Eccd = 0.0d0
 
 
   do iT2=1,maxT ! T amplitude loop
-    Eold  = Elccd
+    Eold  = Eccd
     t2old  = t2 !R0.5d0*(t2+t2old) ! uses mixing
 
     !T2 equations
@@ -163,30 +163,31 @@ subroutine calc_Elccd
 !$OMP END DO
 !$OMP END PARALLEL
 
-    Elccd = 0.0d0
+    Eccd = 0.0d0
 
     do i=MOZero,nOcc
       do j=MOZero,i-1
         do a=nOcc+1,nmo
           do b=nOcc+1,a-1
-            Elccd = Elccd + 1.0d0*t2(a,b,i,j)*AMO(i,j,a,b)
+            Eccd = Eccd + 1.0d0*t2(a,b,i,j)*AMO(i,j,a,b)
           enddo
         enddo
       enddo
     enddo
 
-    deltaE = Elccd-Eold
+    deltaE = Eccd-Eold
+    if(CCD)then
+      write(*,*) "      CCD: ",iT2,Eccd,deltaE
+    else
+      write(*,*) "      LCCD: ",iT2,Eccd,deltaE 
+    endif
     if(abs(deltaE)<Ecctol)then
       write(*,*) '    '
       write(*,*) '    CC iterations converged '
       write(*,*) '    '
       exit
     endif
-    if(CCD)then
-      write(*,*) "      CCD: ",iT2,Elccd,deltaE
-    else
-      write(*,*) "      LCCD: ",iT2,Elccd,deltaE 
-    endif
+
   enddo ! t2 loop
 
   elseif(spins == 2)then
@@ -217,10 +218,10 @@ subroutine calc_Elccd
     t2 = 0.0d0
     t2old = 0.0d0
     Dijab = 1.0d0
-    Elccd = 0.0d0
+    Eccd = 0.0d0
 
   do iT2=1,maxT ! T amplitude loop
-    Eold   = Elccd
+    Eold   = Eccd
     t2old  = t2 !R0.5d0*(t2+t2old) ! uses mixing
 
     !T2 equations
@@ -315,7 +316,7 @@ subroutine calc_Elccd
 !$OMP END DO
 !$OMP END PARALLEL
 
-    Elccd = 0.0d0
+    Eccd = 0.0d0
 !    E_2 = 0.0d0
 !    E_2OS = 0.0d0
 !    E_2SS = 0.0d0
@@ -329,14 +330,18 @@ subroutine calc_Elccd
             elseif((SO_Occ(i) == 0.0) .or. (SO_Occ(j) == 0.0))then
               cycle
             endif
-            Elccd = Elccd + 1.0d0*t2(a,b,i,j)*AMO(i,j,a,b)
+            Eccd = Eccd + 1.0d0*t2(a,b,i,j)*AMO(i,j,a,b)
           enddo
         enddo
       enddo
     enddo
 
-    deltaE = Elccd-Eold
-    write(*,*) "      LCCD: ",iT2,Elccd,deltaE
+    deltaE = Eccd-Eold
+    if(CCD)then
+      write(*,*) "      CCD: ",iT2,Eccd,deltaE
+    else
+      write(*,*) "      LCCD: ",iT2,Eccd,deltaE 
+    endif
     if(abs(deltaE)<Ecctol)then
       write(*,*) '    '
       write(*,*) '    CC iterations converged '
@@ -346,41 +351,7 @@ subroutine calc_Elccd
 
   enddo ! t2 loop
   endif
-
-
-contains
-
-!#############################################
-!#              Calc 2e Indices                 
-!#############################################
-function In4(i,j,k,l) 
-  implicit none
-  integer, intent(in)           :: i,j,k,l
-  integer                       :: In4
-  integer                       :: ij,kl
-
-  if (i>j)then
-    ij = i*(i+1)/2 + j
-  else
-    ij = j*(j+1)/2 + i
-  endif
-
-  if (k>l)then
-    kl = k*(k+1)/2 + l
-  else
-    kl = l*(l+1)/2 + k
-  endif
-
-  if (ij>kl)then
-    In4 = ij*(ij+1)/2 + kl
-  else
-    In4 = kl*(kl+1)/2 + ij
-  endif
-
-end function In4
-
-
-end subroutine calc_Elccd
+end subroutine calc_Eccd
 
 
 end module module_cc

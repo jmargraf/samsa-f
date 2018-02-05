@@ -4,7 +4,7 @@ program samsa
   use module_data,    only : dimensions
   use module_data,    only : allocate_SCFmat 
   use module_data,    only : doMBPT2,doDCPT2,Fract,doGKT
-  use module_data,    only : doLCCD,doDSCF,doDFrac,DoRDMFT,doCCD
+  use module_data,    only : doLCCD,doDSCF,doDFrac,DoRDMFT,doCCD,doCIS
   use module_energy,  only : calc_Enuc,calc_Embpt2
   use module_ints,    only : calc_Ints,get_Occ
   use module_scf,     only : run_SCF
@@ -15,6 +15,7 @@ program samsa
   use module_cc,      only : calc_Eccd
   use module_dscf,    only : calc_dSCF,calc_dfrac
   use module_rdmft,   only : run_rdmft
+  use module_cis,     only : calc_CIS
   implicit none
 
 ! read input and calculate dimensions
@@ -114,8 +115,16 @@ program samsa
     call calc_Eccd(.true.)
   endif
 
-  if(.true.)then
+  if(.false.)then
     call run_LMPT2()
+  endif
+
+  if(doCIS)then
+    if(.not.transdone)then
+      call trans_full(.true.)
+    endif
+    call trans_ucc(.true.)
+    call calc_CIS()
   endif
 
   if(doDCPT2)then

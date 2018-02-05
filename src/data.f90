@@ -28,6 +28,7 @@ module module_data
   double precision                              :: DampTol = 1.0d-7
   logical                                       :: DoDamp = .true.
   logical                                       :: DoReNorm = .false.
+  logical                                       :: DoCIS = .false.
   logical                                       :: DoMBPT2 = .false.
   logical                                       :: DoDCPT2 = .false.
   logical                                       :: DoLCCD  = .false.
@@ -949,7 +950,8 @@ subroutine print_options()
   write(*,'("    DoMBPT2  = ",L12)')      doMBPT2
   write(*,'("    DoDCPT2  = ",L12)')      doDCPT2
   write(*,'("    DoLCCD   = ",L12)')      doLCCD
-  write(*,'("    DoCCD   = ",L12)')      doCCD
+  write(*,'("    DoCCD   = ",L12)')       doCCD
+  write(*,'("    DoCIS   = ",L12)')       doCIS
   write(*,'("    DoRDMFT  = ",L12)')      doRDMFT
   write(*,'("    doGKT    = ",L12)')      doGKT
   write(*,'("    doDSCF   = ",L12)')      doDSCF
@@ -1093,12 +1095,14 @@ subroutine parse_option(argument)
   elseif(uargument(1:4)=='LCCD')then
     doLCCD = .true.
 
-  elseif(uargument(1:4)=='CCD')then
+  elseif(uargument(1:3)=='CCD')then
     doCCD = .true.
+
+  elseif(uargument(1:3)=='CIS')then
+    doCIS = .true.
 
   elseif(uargument(1:5)=='RDMFT')then
     doRDMFT = .true.
-
 
   elseif(uargument(1:6)=='FRACT=')then
     read(UArgument(7:),*) Fract

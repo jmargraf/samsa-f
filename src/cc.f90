@@ -6,41 +6,35 @@ module module_cc
   double precision, allocatable               :: t2(:,:,:,:),t2old(:,:,:,:)
   double precision, allocatable               :: SO_Occ(:)
 
-!  integer                                     :: In4
-
 contains
 
 !#############################################
 !#         Calculate CC doubles
 !#############################################
 subroutine calc_Eccd(CCD)
-  use module_data,      only : MOI,Spins,dim_1e,nOccA,nOccB,Eps,SMO,Occ
-  use module_data,      only : DropMO,DoDrop,Fock,DoSingles,dim_1e,AMO
+  use module_data,      only : Spins,dim_1e,nOccA,nOccB,Eps,Occ
+  use module_data,      only : DropMO,DoDrop,DoSingles,dim_1e,AMO
   use module_data,      only : Eps_SO,F_SO
-  use module_ints,      only : Index2e
-  use module_wavefun,   only : Fock_to_MO,Fock_to_AO
   implicit none
   logical                   :: CCD 
   integer                   :: iSpin,MOZero,iT2
-  integer                   :: p3,p4,h1,h2,h5,h6,p5,p6
   integer                   :: i,j,a,b 
   integer                   :: k,l,c,d
 
-
   integer                   :: nOcc,nmo
   integer                   :: maxT = 150
-  double precision          :: occ_factor,Dijab,E_2,E_2OS,E_2SS
+  double precision          :: occ_factor,Dijab
   double precision          :: DampCC = 0.5d0
   double precision          :: Ecctol = 1.0d-7
   double precision          :: Eold   = 0.0d0
   double precision          :: deltaE = 99.0d0
-  double precision          :: in1,in2
+  double precision          :: in1 ! intermediate during T Amp equations
 
   Eccd  = 0.0d0
 
   if(spins==1)then
     write(*,*) "    "
-    write(*,*) "    Calculating RHF-LCCD correlation energy"
+    write(*,*) "    Calculating RHF-(L)CCD correlation energy"
     write(*,*) "    "
 
     nmo = dim_1e*2
@@ -317,9 +311,6 @@ subroutine calc_Eccd(CCD)
 !$OMP END PARALLEL
 
     Eccd = 0.0d0
-!    E_2 = 0.0d0
-!    E_2OS = 0.0d0
-!    E_2SS = 0.0d0
 
     do i=MOZero,nmo
       do j=MOZero,i-1
@@ -351,7 +342,8 @@ subroutine calc_Eccd(CCD)
 
   enddo ! t2 loop
   endif
+
 end subroutine calc_Eccd
 
-
 end module module_cc
+

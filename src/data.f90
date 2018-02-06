@@ -26,6 +26,8 @@ module module_data
   double precision                              :: Dconv = 1.0d-9
   double precision                              :: Damp = 0.5d0
   double precision                              :: DampTol = 1.0d-7
+  double precision                              :: Tel = 1000.d0
+  double precision                              :: Efermi = 0.0d0
   logical                                       :: DoDamp = .true.
   logical                                       :: DoReNorm = .false.
   logical                                       :: DoCIS = .false.
@@ -39,6 +41,8 @@ module module_data
   logical                                       :: DoDFrac = .false.
   logical                                       :: DoSingles = .true.
   logical                                       :: DoDrop = .true.
+  logical                                       :: DoFTSCF = .true.
+  logical                                       :: DoGKSCF = .false.
   logical                                       :: DynDamp = .false.
   logical                                       :: doSCGKT = .false.
   integer                                       :: Fract = 0 

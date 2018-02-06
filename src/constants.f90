@@ -1,7 +1,8 @@
 module module_constants
   implicit none
 
-! Calcularion details
+! Calculation details
+  double precision, parameter                 :: kb = 3.1668114d-6   
   double precision, parameter                 :: ha2eV = 27.21d0
   double precision, parameter                 :: eV2ha = 1.0d0/27.21d0
   double precision, parameter                 :: ang2bohr = 1.889725989d0

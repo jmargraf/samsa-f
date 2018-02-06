@@ -11,7 +11,7 @@ contains
 !#              Run SCF Loop        
 !#############################################
 subroutine run_SCF(DoPrint)
-  use module_data,                      only : MaxSCF,Damp,doSCGKT,dim_1e,Fock
+  use module_data,                      only : MaxSCF,Damp,doSCGKT,dim_1e,Fock,doGKSCF,doFTSCF
   use module_energy,                    only : Eold,calc_Energy,Etot,Eelec,E1e,E2e
   use module_wavefun,                   only : ort_Fock,dia_Fock,deort_Fock
   use module_wavefun,                   only : calc_Dens,calc_Fock
@@ -38,6 +38,11 @@ subroutine run_SCF(DoPrint)
   dE       = 0.0d0
 
   do iSCF=1,MaxSCF
+
+    if(doGKSCF .or. doFTSCF)then
+        call set_Occupations()
+    endif
+
     Eold = Etot
 
     call ort_Fock()
@@ -192,6 +197,77 @@ subroutine check_Conv(DoPrint)
   endif
 
 end subroutine check_Conv
+
+
+subroutine set_Occupations
+  use module_data,       only : doFTSCF
+  implicit none  
+  double precision :: N
+
+  if(doFTSCF)then
+    call set_FermiLevel()
+  endif
+
+  call calc_Occupations(N)
+  write(*,*) '  particle number: ', N
+
+end subroutine set_Occupations
+
+
+subroutine set_FermiLevel
+  use module_data,       only : Efermi,nel
+  implicit none
+  double precision :: Nconv,N,Nplu,Nmin,diffN
+  double precision :: Estep = 1.0d-4
+  double precision :: Maxstep = 1.0d0
+  integer          :: i,iOrb
+
+  Nconv = 1.0d-6
+
+  do i=1,10
+
+    call calc_Occupations(N)
+
+    if (abs(N-nel)<Nconv)then
+      exit
+    endif
+
+    Efermi = Efermi + Estep
+    call calc_Occupations(Nplu)
+    Efermi = Efermi - 2.0d0*Estep
+    call calc_Occupations(Nmin)
+    Efermi = Efermi + Estep
+    diffN = ((Nplu-nel)-(Nmin-nel))/(2.0d0*Estep)
+
+    !if(abs((N-nel)/diffN)<Maxstep)then
+      Efermi = Efermi - (N-nel)/diffN
+    !else 
+      Efermi = Efermi - sign(Maxstep,(N-nel)/diffN)
+    !endif
+
+    write(*,*) '  particle number: ', i,N,Efermi
+
+  enddo
+
+end subroutine set_FermiLevel
+
+
+subroutine calc_Occupations(N)
+  use module_data,       only : dim_1e,Occ,Efermi,Eps,doGKSCF,doFTSCF,Tel,Spins
+  use module_constants,  only : kb
+  implicit none
+  integer          :: i,iSpin
+  double precision :: N
+
+  N = 0.0d0
+  do iSpin = 1,Spins
+    do i=1,dim_1e
+      Occ(i,iSpin) = (2.0d0/dble(Spins)) / (1.0d0+exp((Eps(i,iSpin)-Efermi)/(kb*Tel)))
+      N = N + Occ(i,iSpin)
+    enddo
+  enddo
+
+end subroutine calc_Occupations
 
 
 subroutine print_TB()

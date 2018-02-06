@@ -70,15 +70,6 @@ subroutine calc_CIS
     write(*,*) '  done building CIS matrix '
 
     call dia_CI(dimCIS)
-
-    ia = 0
-    do i = MOZero,nOcc
-      do a = nOcc+1,nmo
-        ia = ia + 1
-        write(*,*) ia, Eexcite(ia)
-      enddo
-    enddo
-
   endif
 
 end subroutine calc_CIS
@@ -103,7 +94,7 @@ subroutine dia_CI(dimCIS)
   call dsyev('V','U',dimCIS,matA(1:dimCIS,1:dimCIS),dimCIS,Eexcite(1:dimCIS),work,lwork,inf)
   !call print_Mat(matA(:,:),dimCIS,6,"CIS WF")
 
-  !call print_Vec(Eexcite(:),dimCIS,11,"Eigenvalues")
+  call print_Vec(Eexcite(:),dimCIS,11,"Eigenvalues")
 
   deallocate(work)
 

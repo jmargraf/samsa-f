@@ -178,8 +178,9 @@ subroutine trans_full(doprint)
   endif
 
   if(spins == 1)then
-    allocate(MOI(0:dim_2e-1))
-
+    if(.not.allocated(MOI))then
+      allocate(MOI(0:dim_2e-1))
+    endif
 ! sort integrals into 1D array
 
 !$OMP PARALLEL PRIVATE(j,k,l,ij,kl,ijkl)

@@ -16,6 +16,7 @@ program samsa
   use module_dscf,    only : calc_dSCF,calc_dfrac
   use module_rdmft,   only : run_rdmft
   use module_cis,     only : calc_CIS
+  use module_ftdoo,   only : calc_ftdmp2
   implicit none
 
 ! read input and calculate dimensions
@@ -132,6 +133,10 @@ program samsa
       call trans_full(.true.)
     endif
     call run_DCPT2()
+  endif
+
+  if(.true.)then
+    call calc_ftdmp2(.true.)
   endif
 
   write(*,*) "    "

@@ -89,7 +89,9 @@ subroutine run_SCF(DoPrint)
   endif
 
   if(ResetOcc)then
-    write(*,*) "    Resetting MO occupations to integer numbers "
+    if(DoPrint)then
+      write(*,*) "    Resetting MO occupations to integer numbers "
+    endif
     call Reset_Occupations()
 
     call Calc_Dens()
@@ -229,7 +231,7 @@ subroutine set_Occupations
   endif
 
   call calc_Occupations(N)
-  write(*,*) '  particle number: ', N,Efermi
+  !write(*,*) '  particle number: ', N,Efermi
 
 end subroutine set_Occupations
 

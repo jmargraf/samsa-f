@@ -17,9 +17,9 @@ subroutine SemiCanonical()
   double precision, allocatable   :: Vec(:)
   double precision, allocatable   :: work(:)
 
-  write(*,*) ""
-  write(*,*) "    Semicanonical Transformation ..."
-  write(*,*) ""
+  !write(*,*) ""
+  !write(*,*) "    Semicanonical Transformation ..."
+  !write(*,*) ""
 
 ! Occupied-Occupied Block
   do iSpin=1,Spins

@@ -169,7 +169,7 @@ end subroutine run_LMPT2
 
 subroutine run_MBPT2()
   use module_energy, only : calc_Embpt2
-  use module_energy, only : Embpt2     
+  use module_energy, only : Embpt2,Etot     
   use module_energy, only : Embpt2f 
   use module_energy, only : E_OS,E_SS,E_SSx,E_SSc,E_1,E_1f
   use module_energy, only : E_AAx,E_AAc,E_BBx,E_BBc
@@ -191,6 +191,7 @@ subroutine run_MBPT2()
     write(*,'("      E_SSc  = ",F12.6)') E_SSc
     write(*,*) "    "
     write(*,'("      EMBPT2 = ",F12.6)') Embpt2
+    write(*,'("      Etotal = ",F12.6)') Embpt2+Etot
     write(*,*) "    "
   elseif(spins==2)then
     write(*,*) "    "

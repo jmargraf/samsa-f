@@ -26,7 +26,7 @@ module module_data
   double precision                              :: Dconv = 1.0d-9
   double precision                              :: Damp = 0.5d0
   double precision                              :: DampTol = 1.0d-7
-  double precision                              :: Tel = 1000.d0
+  double precision                              :: Tel = 200000.d0
   double precision                              :: Efermi = 0.0d0
   logical                                       :: DoDamp = .true.
   logical                                       :: DoReNorm = .false.
@@ -41,8 +41,9 @@ module module_data
   logical                                       :: DoDFrac = .false.
   logical                                       :: DoSingles = .true.
   logical                                       :: DoDrop = .true.
-  logical                                       :: DoFTSCF = .true.
+  logical                                       :: DoFTSCF = .false.
   logical                                       :: DoGKSCF = .false.
+  logical                                       :: ResetOcc = .false.
   logical                                       :: DynDamp = .false.
   logical                                       :: doSCGKT = .false.
   integer                                       :: Fract = 0 
@@ -982,6 +983,7 @@ end subroutine print_options
 !#              Parse Options
 !#############################################
 subroutine parse_option(argument)
+  use module_constants,   only : ev2ha
   implicit none
   character(len=64),intent(in)     :: argument
   character(len=64)                :: uargument
@@ -1069,6 +1071,15 @@ subroutine parse_option(argument)
       write(*,*) "    Unknown Argument :", uargument
     endif
 
+  elseif(uargument(1:4)=='TEL=')then
+    read(UArgument(5:),*) Tel
+!    write(*,*) '    PAR1      = ',Par(1)
+
+  elseif(uargument(1:7)=='EFERMI=')then
+    read(UArgument(8:),*) Efermi
+    Efermi = Efermi*ev2ha
+!    write(*,*) '    PAR1      = ',Par(1)
+
   elseif(uargument(1:5)=='PAR1=')then
     read(UArgument(6:),*) Par(1)
 !    write(*,*) '    PAR1      = ',Par(1)
@@ -1108,6 +1119,12 @@ subroutine parse_option(argument)
   elseif(uargument(1:5)=='RDMFT')then
     doRDMFT = .true.
 
+  elseif(uargument(1:5)=='FTSCF')then
+    doFTSCF = .true.
+
+  elseif(uargument(1:5)=='GKSCF')then
+    doGKSCF = .true.
+
   elseif(uargument(1:6)=='FRACT=')then
     read(UArgument(7:),*) Fract
 !    write(*,*) '    FRACT     = ',Fract
@@ -1132,6 +1149,9 @@ subroutine parse_option(argument)
 
   elseif(uargument(1:9)=='NOSINGLES')then
     doSingles = .false.
+
+  elseif(uargument(1:8)=='RESETOCC')then
+    ResetOcc = .true.
 
   elseif(uargument(1:6)=='SCGKT')then
     doSCGKT = .true.

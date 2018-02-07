@@ -11,7 +11,7 @@ contains
 !#              Run SCF Loop        
 !#############################################
 subroutine run_SCF(DoPrint)
-  use module_data,                      only : MaxSCF,Damp,doSCGKT,dim_1e,Fock,doGKSCF,doFTSCF
+  use module_data,                      only : MaxSCF,Damp,doSCGKT,dim_1e,Fock,doGKSCF,doFTSCF,Occ,Spins,ResetOcc
   use module_energy,                    only : Eold,calc_Energy,Etot,Eelec,E1e,E2e
   use module_wavefun,                   only : ort_Fock,dia_Fock,deort_Fock
   use module_wavefun,                   only : calc_Dens,calc_Fock
@@ -19,7 +19,7 @@ subroutine run_SCF(DoPrint)
   use module_wavefun,                   only : Fock_to_MO,Fock_to_AO,Semicanonical
   use module_occupy,                    only : run_corrF,calc_GKT
   use module_trans,                     only : trans_full
-  use module_io,                        only : print_Mat
+  use module_io,                        only : print_Mat,print_Vec,print_SVec
   implicit none
   integer                  :: iSCF
   real                     :: time, starttime
@@ -88,11 +88,29 @@ subroutine run_SCF(DoPrint)
     write(*,*) ""
   endif
 
+  if(ResetOcc)then
+    write(*,*) "    Resetting MO occupations to integer numbers "
+    call Reset_Occupations()
+
+    call Calc_Dens()
+    call Calc_Fock()
+    call Fock_to_MO()
+    call SemiCanonical()
+    call Fock_to_AO()
+    call Calc_Energy()
+
+  endif
+
   if(DoPrint)then
     write(*,*) "           E1e =",E1e
     write(*,*) "           E2e =",E2e
     write(*,*) "         Eelec =",Eelec
     write(*,*) "    Final Etot =",Etot
+    if(Spins==1)then
+      call print_Vec(Occ(:,1),dim_1e,18,"Occupation Numbers")
+    elseif(Spins==2)then
+      call print_SVec(Occ(:,:),dim_1e,18,"Occupation Numbers")
+    endif
   endif
 
   time=secnds(starttime)
@@ -198,9 +216,11 @@ subroutine check_Conv(DoPrint)
 
 end subroutine check_Conv
 
-
+!#############################################
+!#   Set MO Occupations for GK or FT Calcs
+!#############################################
 subroutine set_Occupations
-  use module_data,       only : doFTSCF
+  use module_data,       only : doFTSCF,Efermi
   implicit none  
   double precision :: N
 
@@ -209,22 +229,50 @@ subroutine set_Occupations
   endif
 
   call calc_Occupations(N)
-  write(*,*) '  particle number: ', N
+  write(*,*) '  particle number: ', N,Efermi
 
 end subroutine set_Occupations
 
+!#############################################
+!#       Reset MO Occupations to Aufbau
+!#############################################
+subroutine Reset_Occupations
+  use module_data,       only : Occ,spins,nOccA,nOccB,dim_1e
+  implicit none
+  integer               :: iSpin,i
+  Occ = 0.0d0
 
+  do iSpin=1,spins
+    if(iSpin==1)then
+      do i=1,nOccA
+        Occ(i,iSpin) = 2.0d0 * 1.0d0/dble(spins)
+      enddo
+    endif
+    if(iSpin==2)then
+      do i=1,nOccB
+        Occ(i,iSpin) = 2.0d0 * 1.0d0/dble(spins)
+      enddo
+    endif
+  enddo
+
+end subroutine Reset_Occupations
+
+!#############################################
+!#           Determine Fermi-Level
+!#############################################
 subroutine set_FermiLevel
-  use module_data,       only : Efermi,nel
+  use module_data,       only : Efermi,nel,Spins,nOccA,nOccB,Eps
   implicit none
   double precision :: Nconv,N,Nplu,Nmin,diffN
-  double precision :: Estep = 1.0d-4
-  double precision :: Maxstep = 1.0d0
+  double precision :: Estep = 1.0d-8
+  double precision :: Maxstep = 0.5d0
   integer          :: i,iOrb
 
-  Nconv = 1.0d-6
+  Nconv = 1.0d-9
+  
+  Efermi = 0.5d0*(Eps(nOccA,1)+Eps(nOccA+1,1))
 
-  do i=1,10
+  do i=1,100
 
     call calc_Occupations(N)
 
@@ -239,19 +287,21 @@ subroutine set_FermiLevel
     Efermi = Efermi + Estep
     diffN = ((Nplu-nel)-(Nmin-nel))/(2.0d0*Estep)
 
-    !if(abs((N-nel)/diffN)<Maxstep)then
+    if(abs((N-nel)/diffN)<Maxstep)then
       Efermi = Efermi - (N-nel)/diffN
-    !else 
+    else 
       Efermi = Efermi - sign(Maxstep,(N-nel)/diffN)
-    !endif
+    endif
 
-    write(*,*) '  particle number: ', i,N,Efermi
+    !write(*,*) '  particle number: ', i,N,Efermi
 
   enddo
 
 end subroutine set_FermiLevel
 
-
+!#############################################
+!#     Calc Orbital Occupations for Efermi
+!#############################################
 subroutine calc_Occupations(N)
   use module_data,       only : dim_1e,Occ,Efermi,Eps,doGKSCF,doFTSCF,Tel,Spins
   use module_constants,  only : kb
@@ -269,7 +319,9 @@ subroutine calc_Occupations(N)
 
 end subroutine calc_Occupations
 
-
+!#############################################
+!#       Print Hamiltonian for TB calcs
+!#############################################
 subroutine print_TB()
   use module_data,      only : dim_1e,Fock,Bastype,Basis,atom,xyz,DropMO,Sij
   implicit none

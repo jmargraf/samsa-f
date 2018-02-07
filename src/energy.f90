@@ -61,7 +61,7 @@ subroutine calc_Embpt2
       do a=nOccA,dim_1e-1
         call Index2e(i,a,ia)
         if(doSingles)then
-          E_1   = E_1 + Fock(i+1,a+1,1)*Fock(i+1,a+1,1)/(Eps(a+1,1)-Eps(i+1,1))
+          E_1   = E_1 - Fock(i+1,a+1,1)*Fock(i+1,a+1,1)/(Eps(a+1,1)-Eps(i+1,1))
         endif
 
         do j=MOZero,nOccA-1

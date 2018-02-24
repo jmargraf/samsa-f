@@ -43,6 +43,7 @@ module module_data
   logical                                       :: DoDrop = .true.
   logical                                       :: DoFTSCF = .false.
   logical                                       :: DoGKSCF = .false.
+  logical                                       :: DoFTDMP2 = .false.
   logical                                       :: ResetOcc = .false.
   logical                                       :: DynDamp = .false.
   logical                                       :: doSCGKT = .false.
@@ -1124,6 +1125,9 @@ subroutine parse_option(argument)
 
   elseif(uargument(1:5)=='GKSCF')then
     doGKSCF = .true.
+
+  elseif(uargument(1:6)=='FTDMP2')then
+    doFTDMP2 = .true.
 
   elseif(uargument(1:6)=='FRACT=')then
     read(UArgument(7:),*) Fract

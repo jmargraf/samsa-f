@@ -4,7 +4,7 @@ program samsa
   use module_data,    only : dimensions
   use module_data,    only : allocate_SCFmat 
   use module_data,    only : doMBPT2,doDCPT2,Fract,doGKT
-  use module_data,    only : doLCCD,doDSCF,doDFrac,DoRDMFT,doCCD,doCIS
+  use module_data,    only : doLCCD,doDSCF,doDFrac,DoRDMFT,doCCD,doCIS,doFTDMP2
   use module_energy,  only : calc_Enuc,calc_Embpt2
   use module_ints,    only : calc_Ints,get_Occ
   use module_scf,     only : run_SCF
@@ -13,7 +13,7 @@ program samsa
   use module_trans,   only : trans_full,transdone,trans_ucc
   use module_occupy,  only : calc_GKT,run_corrF
   use module_cc,      only : calc_Eccd
-  use module_dscf,    only : calc_dSCF,calc_dfrac
+  use module_dscf,    only : calc_dSCF,calc_dfrac,calc_fracCC
   use module_rdmft,   only : run_rdmft
   use module_cis,     only : calc_CIS
   use module_ftdoo,   only : calc_ftdmp2
@@ -97,7 +97,8 @@ program samsa
   endif
 
   if(doDFrac)then
-    call calc_dfrac(.true.)
+    !call calc_dfrac(.true.)
+    call calc_fracCC(.true.)
   endif
 
   if(doLCCD)then
@@ -105,7 +106,7 @@ program samsa
       call trans_full(.true.)
     endif
     call trans_ucc(.true.)
-    call calc_Eccd(.false.)
+    call calc_Eccd(.false.,.false.)
   endif
 
   if(doCCD)then
@@ -113,7 +114,7 @@ program samsa
       call trans_full(.true.)
     endif
     call trans_ucc(.true.)
-    call calc_Eccd(.true.)
+    call calc_Eccd(.true.,.false.)
   endif
 
   if(.false.)then
@@ -135,7 +136,7 @@ program samsa
     call run_DCPT2()
   endif
 
-  if(.true.)then
+  if(doFTDMP2)then
     call calc_ftdmp2(.true.)
   endif
 

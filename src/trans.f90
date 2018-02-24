@@ -263,7 +263,9 @@ subroutine trans_ucc(doprint)
 
     nmo = dim_1e*2
 
-    allocate(AMO(1:nmo,1:nmo,1:nmo,1:nmo),Eps_SO(1:nmo),F_SO(1:nmo,1:nmo))
+    if(.not.allocated(AMO))then
+      allocate(AMO(1:nmo,1:nmo,1:nmo,1:nmo),Eps_SO(1:nmo),F_SO(1:nmo,1:nmo))
+    endif
 
     AMO = 0.0d0
 
@@ -310,7 +312,9 @@ subroutine trans_ucc(doprint)
 
     nmo = dim_1e*2
 
-    allocate(AMO(1:nmo,1:nmo,1:nmo,1:nmo),Eps_SO(1:nmo),F_SO(1:nmo,1:nmo))
+    if(.not.allocated(AMO))then
+      allocate(AMO(1:nmo,1:nmo,1:nmo,1:nmo),Eps_SO(1:nmo),F_SO(1:nmo,1:nmo))
+    endif
 
     AMO = 0.0d0
 

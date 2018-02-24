@@ -44,7 +44,7 @@ subroutine calc_ftdmp2(doprint)
   double precision            :: Tstep = 10.0d0
   double precision            :: Eold = 0.0d0
   double precision            :: dE = 0.0d0
-  double precision            :: alpha = 1.0d10
+  double precision            :: alpha = 2.0d10
   double precision            :: Econv = 1.0d-5
 
 !  E0 = Etot
@@ -60,7 +60,7 @@ subroutine calc_ftdmp2(doprint)
     write(*,*) &
 "                T_el        E(SCF)         E(MBPT2)        E(sing)        Etot"
   endif
-  if(.false.)then
+  if(.true.)then
     do i=1,22
       Tel = Tlist(i)
       call run_scf(.false.)
@@ -102,7 +102,8 @@ subroutine calc_ftdmp2(doprint)
       dEdT = (Eplus-Eminus)/(2.0d0*Tstep)
       !write(*,*) dEdT
       Tel = Tel - alpha*dEdT
-      
+      Eold = Ezero
+ 
     enddo
   endif
 

@@ -65,7 +65,7 @@ sub RunPsi{
   open(PSI,">","$name\_PSI4.inp");
   print PSI "import numpy as np \n";
   print PSI " \n";
-  print PSI "memory 250 mb \n";
+#  print PSI "memory 250 mb \n";
   print PSI " \n";
   print PSI "set globals {  \n";
   if($basis_set eq "min"){
@@ -88,7 +88,8 @@ sub RunPsi{
   }
   print PSI "}\n";
   print PSI " \n";
-  print PSI "ref_wfn = psi4.new_wavefunction($name, psi4.get_global_option('BASIS')) \n";
+#  print PSI "ref_wfn = psi4.new_wavefunction($name, psi4.get_global_option('BASIS')) \n";
+  print PSI "ref_wfn = psi4.core.Wavefunction.build($name, psi4.core.get_global_option('BASIS')) \n";
   print PSI "mints = MintsHelper(ref_wfn.basisset()) \n";
   print PSI " \n";
   print PSI "S = mints.ao_overlap() \n";

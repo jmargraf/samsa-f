@@ -203,9 +203,9 @@ subroutine calc_fracCC(doprint)
 
 ! Only uses alpha Channel
 ! EAs:
-  do i=0,20
+  do i=0,10
     Fock = Fock0
-    Occ(nOccA+1,1) = Occ(nOccA+1,1)+0.05d0*dble(i)
+    Occ(nOccA+1,1) = Occ(nOccA+1,1)+0.10d0*dble(i)
     call run_scf(.false.)
     call trans_full(.false.)
     call trans_ucc(.false.)

@@ -19,7 +19,7 @@ subroutine calc_Eccd(CCD,frac_occ)
   logical                   :: CCD 
   logical                   :: frac_occ
   logical                   :: MBPT3 = .false.
-  integer                   :: iSpin,MOZero,iT2
+  integer                   :: iSpin,MOZero,iT2,nfocca,nfoccb,nfocc
   integer                   :: i,j,a,b 
   integer                   :: k,l,c,d
 
@@ -362,10 +362,22 @@ subroutine calc_Eccd(CCD,frac_occ)
     nmo = dim_1e*2
     MOZero = 1
 
+    nfocca = -1
+    nfoccb = -1
+    nfocc = 0
+
     do i=2,nmo,2
       SO_Occ(i-1) = Occ(i/2,1)
       SO_Occ(i) = Occ(i/2,2)
+      if ((SO_Occ(i-1) == 0.0d0) .and. (nfocca == -1)) then
+          nfocca = i-1
+      endif
+      if ((SO_Occ(i) == 0.0d0) .and. (nfoccb == -1)) then
+          nfoccb = i
+      endif
     enddo
+
+    nfocc = max(nfocca,nfoccb)
 
     if(DoDrop)then
       MOZero = DropMO*2+1
@@ -392,16 +404,17 @@ subroutine calc_Eccd(CCD,frac_occ)
     !Nocc version
 !$OMP PARALLEL PRIVATE(i,j,a,b,k,l,c,d,Dijab,in1)
 !$OMP DO
-    do i=MOZero,nmo
-      do j=MOZero,nmo
+    do i=MOZero,nfocc
+      do j=MOZero,nfocc
         do a=MOZero,nmo
           do b=MOZero,nmo
             occ_factor = (SO_Occ(i)*(1.0d0-SO_Occ(a))*SO_Occ(j)*(1.0d0-SO_Occ(b)))
 
             Dijab = (Eps_SO(i) + Eps_SO(j) - Eps_SO(a) - Eps_SO(b))
-            if(Dijab == 0.0d0)then
-              cycle
-            endif
+            Dijab = (Dijab*Dijab+1.0d-7)/(Dijab)
+            !if(Dijab == 0.0d0)then
+            !  cycle
+            !endif
 
 !           [ + 1.0 ] * v ( p3 p4 h1 h2 )
             in1 = 1.0d0 * AMO(a,b,i,j)*occ_factor
@@ -415,7 +428,7 @@ subroutine calc_Eccd(CCD,frac_occ)
             enddo
 
 !           [ + 0.5 ] * Sum ( h5 h6 ) * t ( p3 p4 h5 h6 ) * v ( h5 h6 h1 h2 ) done
-            do k = MOZero,nmo
+            do k = MOZero,nfocc
               do l = MOZero,k-1
                 occ_factor = (SO_Occ(k)*(SO_Occ(l))*SO_Occ(i)*(SO_Occ(j)))
                 in1 = in1 + 1.0d0 * t2old(a,b,k,l) * AMO(k,l,i,j)*occ_factor
@@ -424,7 +437,8 @@ subroutine calc_Eccd(CCD,frac_occ)
 
 !          * Sum ( p5 h6 ) * t ( p5 p3 h6 h2 ) * v ( h6 p4 h1 p5 ) done
             do c = MOZero,nmo
-              do k = MOZero,nmo
+              do k = MOZero,nfocc
+
                 occ_factor = (SO_Occ(k)*(1.0d0-SO_Occ(b))*SO_Occ(j)*(1.0d0-SO_Occ(c)))
                 in1 = in1 - 1.0d0 * t2old(a,c,i,k) * AMO(k,b,j,c)*occ_factor
                 occ_factor = (SO_Occ(k)*(1.0d0-SO_Occ(a))*SO_Occ(j)*(1.0d0-SO_Occ(c)))
@@ -440,8 +454,9 @@ subroutine calc_Eccd(CCD,frac_occ)
             !Terms that are quadratic in T2
               do c = MOZero,nmo
                 do d = MOZero,nmo
-                  do k = MOZero,nmo
-                    do l = MOZero,nmo
+                  do k = MOZero,nfocc
+                    do l = MOZero,nfocc
+      
                       occ_factor = (SO_Occ(k)*(1.0d0-SO_Occ(c))*SO_Occ(l)*(1.0d0-SO_Occ(d)))
                       in1 = in1 + 0.5d0 *  t2old(a,c,i,k)*t2old(d,b,l,j)   * AMO(k,l,c,d) *occ_factor
                       in1 = in1 - 0.5d0 *  t2old(b,c,i,k)*t2old(d,a,l,j)   * AMO(k,l,c,d) *occ_factor

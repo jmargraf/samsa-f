@@ -106,7 +106,11 @@ program samsa
       call trans_full(.true.)
     endif
     call trans_ucc(.true.)
-    call calc_Eccd(.false.,.false.)
+    if(Fract==0)then
+      call calc_Eccd(.false.,.false.)
+    elseif(Fract>0)then
+      call calc_Eccd(.false.,.true.)
+    endif
   endif
 
   if(doCCD)then

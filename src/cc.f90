@@ -3,6 +3,8 @@ module module_cc
 
 ! Energies           
   double precision                            :: Eccd    = 0.0d0
+  double precision                            :: Ecc1    = 0.0d0
+  double precision                            :: Ecc2    = 0.0d0
   double precision, allocatable               :: t2(:,:,:,:),t2old(:,:,:,:)
   double precision, allocatable               :: SO_Occ(:)
 
@@ -14,7 +16,8 @@ contains
 subroutine calc_Eccd(CCD,frac_occ)
   use module_data,      only : Spins,dim_1e,nOccA,nOccB,Eps,Occ
   use module_data,      only : DropMO,DoDrop,DoSingles,dim_1e,AMO
-  use module_data,      only : Eps_SO,F_SO
+  use module_data,      only : DampCC,DoCCLS,CCMax
+  use module_data,      only : Eps_SO,F_SO,DoReNorm,OmegaReg
   implicit none
   logical                   :: CCD 
   logical                   :: frac_occ
@@ -24,13 +27,21 @@ subroutine calc_Eccd(CCD,frac_occ)
   integer                   :: k,l,c,d
 
   integer                   :: nOcc,nmo
-  integer                   :: maxT = 150
+  integer                   :: maxT = 1000
   double precision          :: occ_factor,Dijab
-  double precision          :: DampCC = 0.5d0
-  double precision          :: Ecctol = 1.0d-7
+  double precision          :: Ecctol = 1.0d-6
+  double precision          :: LSmult = 1.0d4
   double precision          :: Eold   = 0.0d0
   double precision          :: deltaE = 99.0d0
   double precision          :: in1 ! intermediate during T Amp equations
+
+  maxT = CCMax
+
+  if (.not. DoCCLS) then
+      LSmult=1.0d0
+  else
+      LSmult=1.0d4
+  endif
 
   Eccd  = 0.0d0
 
@@ -389,6 +400,8 @@ subroutine calc_Eccd(CCD,frac_occ)
     if(.not.allocated(t2))then
       allocate(t2(1:nmo,1:nmo,1:nmo,1:nmo),  &
           t2old(1:nmo,1:nmo,1:nmo,1:nmo))
+          !t2 = 0.0d0
+          !t2old = 0.0d0
     endif
 
     t2 = 0.0d0
@@ -398,7 +411,7 @@ subroutine calc_Eccd(CCD,frac_occ)
 
   do iT2=1,maxT ! T amplitude loop
     Eold   = Eccd
-    t2old  = t2 !R0.5d0*(t2+t2old) ! uses mixing
+    t2old  = (1.0d0-DampCC)*t2+DampCC*t2old ! uses mixing
 
     !T2 equations
     !Nocc version
@@ -408,21 +421,27 @@ subroutine calc_Eccd(CCD,frac_occ)
       do j=MOZero,nfocc
         do a=MOZero,nmo
           do b=MOZero,nmo
-            occ_factor = (SO_Occ(i)*(1.0d0-SO_Occ(a))*SO_Occ(j)*(1.0d0-SO_Occ(b)))
+            !occ_factor = (SO_Occ(i)*(1.0d0-SO_Occ(a))*SO_Occ(j)*(1.0d0-SO_Occ(b)))
 
-            Dijab = (Eps_SO(i) + Eps_SO(j) - Eps_SO(a) - Eps_SO(b))
-            Dijab = (Dijab*Dijab+1.0d-7)/(Dijab)
+            if(DoRenorm)then
+              Dijab = (SO_Occ(i)*Eps_SO(i)        + SO_Occ(j)*Eps_SO(j) & 
+                    - (1.0d0-SO_Occ(a))*Eps_SO(a) - (1.0d0-SO_Occ(b))*Eps_SO(b))
+            else
+              Dijab = (Eps_SO(i) + Eps_SO(j) - Eps_SO(a) - Eps_SO(b))
+            endif
+
+            Dijab = (Dijab*Dijab+LSmult*OmegaReg)/(Dijab)
             !if(Dijab == 0.0d0)then
             !  cycle
             !endif
 
 !           [ + 1.0 ] * v ( p3 p4 h1 h2 )
-            in1 = 1.0d0 * AMO(a,b,i,j)*occ_factor
+            in1 = 1.0d0 * AMO(a,b,i,j) !*occ_factor
 
 !           [ + 0.5 ] * Sum ( p5 p6 ) * t ( p5 p6 h1 h2 ) * v ( p3 p4 p5 p6 ) done
             do c = MOZero,nmo
               do d = MOZero,c-1
-                occ_factor = ((1.0d0-SO_Occ(a))*(1.0d0-SO_Occ(b))*(1.0d0-SO_Occ(c))*(1.0d0-SO_Occ(d)))
+                occ_factor = (1.0d0-SO_Occ(c))*(1.0d0-SO_Occ(d))   !((1.0d0-SO_Occ(a))*(1.0d0-SO_Occ(b))*(1.0d0-SO_Occ(c))*(1.0d0-SO_Occ(d)))
                 in1 = in1 + 1.0d0 * t2old(c,d,i,j) * AMO(a,b,c,d)*occ_factor
               enddo
             enddo
@@ -430,7 +449,7 @@ subroutine calc_Eccd(CCD,frac_occ)
 !           [ + 0.5 ] * Sum ( h5 h6 ) * t ( p3 p4 h5 h6 ) * v ( h5 h6 h1 h2 ) done
             do k = MOZero,nfocc
               do l = MOZero,k-1
-                occ_factor = (SO_Occ(k)*(SO_Occ(l))*SO_Occ(i)*(SO_Occ(j)))
+                occ_factor = (SO_Occ(k))*(SO_Occ(l)) !*SO_Occ(i)*(SO_Occ(j)))
                 in1 = in1 + 1.0d0 * t2old(a,b,k,l) * AMO(k,l,i,j)*occ_factor
               enddo
             enddo
@@ -438,14 +457,15 @@ subroutine calc_Eccd(CCD,frac_occ)
 !          * Sum ( p5 h6 ) * t ( p5 p3 h6 h2 ) * v ( h6 p4 h1 p5 ) done
             do c = MOZero,nmo
               do k = MOZero,nfocc
+                occ_factor = (SO_Occ(k))*(1.0d0-SO_Occ(c))
 
-                occ_factor = (SO_Occ(k)*(1.0d0-SO_Occ(b))*SO_Occ(j)*(1.0d0-SO_Occ(c)))
+                !occ_factor = (SO_Occ(k)*(1.0d0-SO_Occ(b))*SO_Occ(j)*(1.0d0-SO_Occ(c)))
                 in1 = in1 - 1.0d0 * t2old(a,c,i,k) * AMO(k,b,j,c)*occ_factor
-                occ_factor = (SO_Occ(k)*(1.0d0-SO_Occ(a))*SO_Occ(j)*(1.0d0-SO_Occ(c)))
+                !occ_factor = (SO_Occ(k)*(1.0d0-SO_Occ(a))*SO_Occ(j)*(1.0d0-SO_Occ(c)))
                 in1 = in1 + 1.0d0 * t2old(b,c,i,k) * AMO(k,a,j,c)*occ_factor
-                occ_factor = (SO_Occ(k)*(1.0d0-SO_Occ(b))*SO_Occ(i)*(1.0d0-SO_Occ(c)))
+                !occ_factor = (SO_Occ(k)*(1.0d0-SO_Occ(b))*SO_Occ(i)*(1.0d0-SO_Occ(c)))
                 in1 = in1 + 1.0d0 * t2old(a,c,j,k) * AMO(k,b,i,c)*occ_factor
-                occ_factor = (SO_Occ(k)*(1.0d0-SO_Occ(a))*SO_Occ(i)*(1.0d0-SO_Occ(c)))
+                !occ_factor = (SO_Occ(k)*(1.0d0-SO_Occ(a))*SO_Occ(i)*(1.0d0-SO_Occ(c)))
                 in1 = in1 - 1.0d0 * t2old(b,c,j,k) * AMO(k,a,i,c)*occ_factor
               enddo
             enddo
@@ -458,6 +478,7 @@ subroutine calc_Eccd(CCD,frac_occ)
                     do l = MOZero,nfocc
       
                       occ_factor = (SO_Occ(k)*(1.0d0-SO_Occ(c))*SO_Occ(l)*(1.0d0-SO_Occ(d)))
+                      !write(*,*) occ_factor
                       in1 = in1 + 0.5d0 *  t2old(a,c,i,k)*t2old(d,b,l,j)   * AMO(k,l,c,d) *occ_factor
                       in1 = in1 - 0.5d0 *  t2old(b,c,i,k)*t2old(d,a,l,j)   * AMO(k,l,c,d) *occ_factor
                       in1 = in1 + 0.5d0 *  t2old(b,c,j,k)*t2old(d,a,l,i)   * AMO(k,l,c,d) *occ_factor
@@ -492,31 +513,55 @@ subroutine calc_Eccd(CCD,frac_occ)
       do j=MOZero,i-1
         do a=MOZero,nmo
           do b=MOZero,a-1
+            occ_factor = (SO_Occ(i)*(1.0d0-SO_Occ(a))*SO_Occ(j)*(1.0d0-SO_Occ(b)))
             !if((SO_Occ(a) == 1.0) .or. (SO_Occ(b) == 1.0))then
             !  cycle
             !elseif((SO_Occ(i) == 0.0) .or. (SO_Occ(j) == 0.0))then
             !  cycle
             !endif
-            Eccd = Eccd + 1.0d0*t2(a,b,i,j)*AMO(i,j,a,b)
+            Eccd = Eccd + 1.0d0*t2(a,b,i,j)*AMO(i,j,a,b)*occ_factor
           enddo
         enddo
       enddo
     enddo
 
+    if(iT2 == 1)then
+      Ecc1 = Eccd
+    elseif(iT2 == 2)then
+      Ecc2 = Eccd
+    endif
+
     deltaE = Eccd-Eold
     if(CCD)then
-      write(*,*) "      CCD: ",iT2,Eccd,deltaE
+      write(*,*) "      CCD: ",iT2,Eccd,deltaE,DampCC,LSmult*OmegaReg
     elseif(MBPT3)then
       write(*,*) "      MBPT3: ",iT2,Eccd
       exit
     else
-      write(*,*) "      LCCD: ",iT2,Eccd,deltaE
+      write(*,*) "      LCCD: ",iT2,Eccd,deltaE,DampCC,LSmult*OmegaReg
     endif
-    if(abs(deltaE)<Ecctol)then
+    if(abs(deltaE)<Ecctol*1.0d0 .and. DampCC==0.6d0 .and. LSmult == 1.0d0)then
+      DampCC=0.0d0
+      write(*,*) '    Turning off damping '
+    elseif(abs(deltaE)<Ecctol*1.0d0 .and. DampCC>0.8d0 .and. LSmult == 1.0d0)then
+      DampCC=0.8d0
+      write(*,*) '    set damping = 0.8 '
+    elseif(abs(deltaE)<Ecctol*1.0d0 .and. DampCC>0.6d0 .and. LSmult == 1.0d0)then
+      DampCC=0.6d0
+      write(*,*) '    set damping = 0.6 '
+    elseif(abs(deltaE)<Ecctol .and. LSmult == 1.0d0 .and. DampCC==0.0)then
       write(*,*) '    '
       write(*,*) '    CC iterations converged '
       write(*,*) '    '
       exit
+    endif
+
+    if(DoCCLS .and. abs(deltaE)<Ecctol*0.1d0 .and. LSmult <= 10.0d0)then
+      LSmult=1.0d0
+      write(*,*) '    Turning off level shift '
+    elseif(DoCCLS .and. abs(deltaE)<0.1d0*Ecctol .and. LSmult > 1.0d0)then
+      LSmult=0.5d0*LSmult
+      write(*,*) '    decrease level shift to',LSmult*OmegaReg
     endif
 
   enddo ! t2 loop

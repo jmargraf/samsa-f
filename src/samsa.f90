@@ -5,6 +5,7 @@ program samsa
   use module_data,    only : allocate_SCFmat 
   use module_data,    only : doMBPT2,doDCPT2,Fract,doGKT
   use module_data,    only : doLCCD,doDSCF,doDFrac,DoRDMFT,doCCD,doCIS,doFTDMP2
+  use module_data,    only : spin_homo,spin_lumo,basis_set
   use module_energy,  only : calc_Enuc,calc_Embpt2
   use module_ints,    only : calc_Ints,get_Occ
   use module_scf,     only : run_SCF
@@ -57,8 +58,10 @@ program samsa
 
 ! run properties
   call print_Eigen()
-  call pop_Mulliken()
-  call pop_Loewdin()
+  if(basis_set /= 'tzd')then
+    call pop_Mulliken()
+    call pop_Loewdin()
+  endif
 
 ! calc NOs?
   call calc_natorbs()
@@ -98,7 +101,7 @@ program samsa
 
   if(doDFrac)then
     !call calc_dfrac(.true.)
-    call calc_fracCC(.true.)
+    call calc_fracCC(.true.,spin_homo,spin_lumo)
   endif
 
   if(doLCCD)then
@@ -118,7 +121,11 @@ program samsa
       call trans_full(.true.)
     endif
     call trans_ucc(.true.)
-    call calc_Eccd(.true.,.false.)
+    if(Fract==0)then
+      call calc_Eccd(.true.,.false.)
+    elseif(Fract>0)then
+      call calc_Eccd(.true.,.true.)
+    endif
   endif
 
   if(.false.)then

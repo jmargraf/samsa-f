@@ -152,71 +152,126 @@ end subroutine calc_dSCF
 !#############################################
 !#       Calculate fractional CC curve
 !#############################################
-subroutine calc_fracCC(doprint)
-  use module_data,          only : Occ,nOccA,nOccB,dim_1e,Eps,Spins,DropMO,Damp,Fock
+subroutine calc_fracCC(doprint,spin_homo,spin_lumo)
+  use module_data,          only : Occ,nOccA,nOccB,dim_1e,Eps,Spins,DropMO,Damp,Fock,DampCC
+  use module_data,          only : doIP,doEA,doFullCC,DoCCLS
+  use module_wavefun,       only : do_guess
   use module_energy,        only : Etot,calc_Embpt2,Embpt2f,Embpt2
   use module_scf,           only : run_SCF
   use module_trans,         only : trans_full,trans_ucc
-  use module_cc,            only : Eccd,calc_Eccd
+  use module_cc,            only : Eccd,calc_Eccd,Ecc1,Ecc2
   implicit none
   logical, intent(IN)         :: doprint
-  integer                     :: i, iSpin
+  integer                     :: i,j,iSpin,spin_homo,spin_lumo,nOccH,nOccL
   double precision            :: E2ex, E2c, ESS, EOS
+  double precision            :: saveDampCC
+  logical                     :: SaveLevelShift = .true.
 !  E0 = Etot
+
+  saveDampCC = DampCC
+  SaveLevelShift = DoCCLS
 
   allocate(Fock0(dim_1e,dim_1e,spins),)
   Fock0 = Fock
 
-!  if(doprint)then
-!    write(*,*) "    "
-!    write(*,*) "    Calculating fractional occupation curve HOMO (Ha)"
-!    write(*,*) "    "
-!    write(*,*) "    alpha channel:"
-!    write(*,*) &
-!"                Occ         E(SCF)         E(MBPT2)       ELCCD  "
-!  endif
+  if (spin_homo == 1) then
+    nOccH = nOccA
+  else
+    nOccH = nOccB
+  endif
 
-! Only uses Alpha Channel
+  if (spin_lumo == 1) then
+    nOccL = nOccA
+  else
+    nOccL = nOccB
+  endif
+
+
+  if(doprint)then
+    write(*,*) "    "
+    write(*,*) "    Calculating fractional occupation curve HOMO (Ha)"
+    write(*,*) "    "
+    write(*,*) &
+"                Occ         E(SCF)         E(MBPT2)       ELCCD  "
+  write(*,*) "Spin Channel: ", spin_homo
+  endif
+
 ! IPs:
-!  do i=0,20
-!    Fock = Fock0
-!    Occ(nOccA,1) = Occ(nOccA,1)-0.05d0*dble(i)
-!    call run_scf(.false.)
-!    call trans_full(.false.)
-!    call trans_ucc(.false.)
-!    call calc_Eccd(.false.,.true.)
+  if(doIP)then
+  do i=0,10
+    DampCC = saveDampCC
+    DoCCLS = SaveLevelShift  
+    write(*,*) 'DampCC,LevelShift: ', DampCC, DoCCLS
+    Fock = Fock0
+    Occ(nOccH,spin_homo) = Occ(nOccH,spin_homo)-0.10d0*dble(i)
+    Damp = 0.5d0
+    call run_scf(.true.)
+    call trans_full(.false.)
+    call trans_ucc(.false.)
+    call calc_Eccd(doFullCC,.true.)
 !    call calc_Embpt2()
 
-!    if(doprint)then
-!      write(*,'("    Frac: ",4(" ",F12.5," "))') Occ(nOccA,1), Etot, Embpt2f, Eccd
-!    endif
-!    Occ(nOccA,1) = 1.0d0
-!  enddo
-!  if(doprint)then
-!    write(*,*) "    "
-!    write(*,*) "    Calculating fractional occupation curve LUMO (Ha)"
-!    write(*,*) "    "
-!    write(*,*) "    alpha channel:"
-!    write(*,*) &
-!"                Occ         E(SCF)         E(MBPT2)       ELCCD  "
-!  endif
+    if(doprint)then
+      write(*,'("    Frac: ",6(" ",F12.5," "))') (Occ(nOccH,spin_homo)-1.0d0),Occ(nOccH,spin_homo), Etot, Ecc1, Ecc2, Eccd
+    endif
+    Occ(nOccH,spin_homo) = 1.0d0
+  enddo
+  endif
 
-! Only uses alpha Channel
+  if(doprint)then
+    write(*,*) "    "
+    write(*,*) "    Calculating fractional occupation curve LUMO (Ha)"
+    write(*,*) "    "
+    write(*,*) &
+"                Occ         E(SCF)         E(MBPT2)       ELCCD  "
+  endif
+  write(*,*) "Spin Channel: ", spin_lumo
+
 ! EAs:
+  if(doEA)then
   do i=0,10
+    DampCC = saveDampCC
+    DoCCLS = SaveLevelShift 
     Fock = Fock0
-    Occ(nOccA+1,1) = Occ(nOccA+1,1)+0.10d0*dble(i)
+    Occ(nOccL+1,spin_lumo) = Occ(nOccL+1,spin_lumo)+0.10d0*dble(i)
+    Damp = 0.5d0
     call run_scf(.false.)
     call trans_full(.false.)
     call trans_ucc(.false.)
-    call calc_Eccd(.false.,.true.)
-    call calc_Embpt2()
+    call calc_Eccd(DoFullCC,.true.)
+    !call calc_Embpt2()
 
     if(doprint)then
-      write(*,'("    Frac: ",4(" ",F12.5," "))') Occ(nOccA+1,1), Etot, Embpt2f, Eccd
+      write(*,'("    Frac: ",6(" ",F12.5," "))') Occ(nOccL+1,spin_lumo),Occ(nOccL+1,spin_lumo), Etot, Ecc1, Ecc2, Eccd
     endif
-    Occ(nOccA+1,1) = 0.0d0
+    Occ(nOccL+1,spin_lumo) = 0.0d0
   enddo
+  endif
+
+!Frac Spin:
+  if(.false.)then
+   Occ(nOccL+1,spin_lumo) = 0.0d0
+   Occ(nOccH,spin_homo)   = 0.0d0
+    do i=0,10
+     do j=0,10
+      Fock = Fock0
+      Occ(nOccL+1,spin_lumo) = Occ(nOccL+1,spin_lumo)+0.10d0*dble(i)
+      Occ(nOccH,spin_homo) = Occ(nOccH,spin_homo)+0.10d0*dble(j)
+      Damp = 0.5d0
+      call run_scf(.false.)
+      call trans_full(.false.)
+      call trans_ucc(.false.)
+      call calc_Eccd(DoFullCC,.true.)
+      !call calc_Embpt2()
+
+      if(doprint)then
+        write(*,'("    Frac: ",6(" ",F12.5," "))') Occ(nOccH,spin_homo),Occ(nOccL+1,spin_lumo), Etot, Ecc1, Ecc2, Eccd
+      endif
+      Occ(nOccL+1,spin_lumo) = 0.0d0
+      Occ(nOccH,spin_homo)   = 0.0d0
+     enddo
+    enddo
+  endif
 
 
 end subroutine calc_fracCC

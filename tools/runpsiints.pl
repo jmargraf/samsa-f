@@ -76,6 +76,8 @@ sub RunPsi{
     print PSI "  basis 6-311G** \n";
   }elsif($basis_set eq "tzp"){
     print PSI "  basis def2-TZVP \n";
+  }elsif($basis_set eq "tzd"){
+    print PSI "  basis def2-TZVPD \n";
   }elsif($basis_set eq "qzp"){
     print PSI "  basis def2-QZVP \n";
   }

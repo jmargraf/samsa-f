@@ -22,12 +22,15 @@ module module_data
   character(len=3)                              :: calctype = "rhf"
   integer                                       :: spins = 1
   integer                                       :: maxSCF = 1000
+  integer                                       :: CCmax = 100
   double precision                              :: Econv = 1.0d-9
   double precision                              :: Dconv = 1.0d-9
   double precision                              :: Damp = 0.5d0
   double precision                              :: DampTol = 1.0d-7
+  double precision                              :: DampCC = 0.0
   double precision                              :: Tel = 200000.d0
   double precision                              :: Efermi = 0.0d0
+  double precision                              :: OmegaReg = 1.0d-5
   logical                                       :: DoDamp = .true.
   logical                                       :: DoReNorm = .false.
   logical                                       :: DoCIS = .false.
@@ -44,9 +47,13 @@ module module_data
   logical                                       :: DoFTSCF = .false.
   logical                                       :: DoGKSCF = .false.
   logical                                       :: DoFTDMP2 = .false.
+  logical                                       :: DoCCLS = .false.
   logical                                       :: ResetOcc = .false.
   logical                                       :: DynDamp = .false.
   logical                                       :: doSCGKT = .false.
+  logical                                       :: doIP = .false.
+  logical                                       :: doEA = .false.
+  logical                                       :: doFullCC = .false.
   integer                                       :: Fract = 0 
   character(len=4)                              :: guess = "core"
   double precision                              :: Par(4) = 0.0d0
@@ -56,6 +63,8 @@ module module_data
   double precision                              :: scaleK = 1.0d0
   double precision                              :: scaleSS = 1.0d0
   double precision                              :: scaleOS = 1.0d0
+  integer                                       :: spin_homo = 1
+  integer                                       :: spin_lumo = 1
 
 ! SCF matrices
   double precision, allocatable                 :: Fock(:,:,:)  
@@ -308,6 +317,44 @@ subroutine dimensions()
         dropMO = dropMO + 2
       endif 
     enddo
+  elseif(basis_set == "tzd")then
+    do i=1,natoms
+      if((atom(i) == "H") .or. &
+         (atom(i) == "He"))then
+        dim_1e = dim_1e + 9
+      elseif((atom(i) == "Li"))then
+        dim_1e = dim_1e + 17
+        dropMO = dropMO + 1
+      elseif((atom(i) == "Be"))then
+        dim_1e = dim_1e + 22
+        dropMO = dropMO + 1
+      elseif((atom(i) == "B")  .or. &
+             (atom(i) == "C")  .or. &
+             (atom(i) == "N"))  then  
+        dim_1e = dim_1e + 37
+        dropMO = dropMO + 1
+      elseif((atom(i) == "O")  .or. &
+             (atom(i) == "F")  .or. &
+             (atom(i) == "Ne"))then
+        dim_1e = dim_1e + 40
+        dropMO = dropMO + 1
+      elseif((atom(i) == "Na") .or. &
+             (atom(i) == "Mg"))then
+        dim_1e = dim_1e + 35
+        dropMO = dropMO + 2
+      elseif((atom(i) == "Al") .or. &
+             (atom(i) == "Si") .or. &
+             (atom(i) == "P"))then
+        dim_1e = dim_1e + 43
+        dropMO = dropMO + 2
+      elseif((atom(i) == "S")  .or. &
+             (atom(i) == "Cl") .or. &
+             (atom(i) == "Ar"))then
+        dim_1e = dim_1e + 46
+        dropMO = dropMO + 2
+      endif
+    enddo
+
   endif
 
   allocate(Bastype(dim_1e),basis(dim_1e))
@@ -936,6 +983,44 @@ subroutine basis_types()
              (atom(i) == "Ar"))then
 !       Nothing
       endif
+!     elseif(basis_set == "tzd")then
+!       do i=1,natoms
+!         if((atom(i) == "H") .or. &
+!            (atom(i) == "He"))then
+!           dim_1e = dim_1e + 9
+!         elseif((atom(i) == "Li"))then
+!           dim_1e = dim_1e + 17
+!           dropMO = dropMO + 1
+!         elseif((atom(i) == "Be"))then
+!           dim_1e = dim_1e + 22
+!           dropMO = dropMO + 1
+!         elseif((atom(i) == "B")  .or. &
+!                (atom(i) == "C")  .or. &
+!                (atom(i) == "N"))  then
+!           dim_1e = dim_1e + 37
+!           dropMO = dropMO + 1
+!         elseif((atom(i) == "O")  .or. &
+!                (atom(i) == "F")  .or. &
+!                (atom(i) == "Ne"))then
+!           dim_1e = dim_1e + 40
+!           dropMO = dropMO + 1
+!         elseif((atom(i) == "Na") .or. &
+!                (atom(i) == "Mg"))then
+!           dim_1e = dim_1e + 35
+!           dropMO = dropMO + 2
+!         elseif((atom(i) == "Al") .or. &
+!                (atom(i) == "Si") .or. &
+!                (atom(i) == "P"))then
+!           dim_1e = dim_1e + 43
+!           dropMO = dropMO + 2
+!         elseif((atom(i) == "S")  .or. &
+!                (atom(i) == "Cl") .or. &
+!                (atom(i) == "Ar"))then
+!           dim_1e = dim_1e + 46
+!           dropMO = dropMO + 2
+!         endif
+!       enddo
+
     enddo
   endif
 
@@ -1018,7 +1103,12 @@ subroutine parse_option(argument)
   elseif(uargument(1:5)=='DAMP=')then
     read(UArgument(6:),*) DAMP
     DoDamp = .true.
+  elseif(uargument(1:7)=='DAMPCC=')then
+    read(UArgument(8:),*) DAMPCC
 !    write(*,*) '    DAMP      = ',DAMP
+
+  elseif(uargument(1:10)=='LEVELSHIFT')then
+    DoCCLS = .true.
 
   elseif(uargument(1:7)=='SCALEJ=')then
     read(UArgument(8:),*) scaleJ
@@ -1068,6 +1158,8 @@ subroutine parse_option(argument)
     elseif(uargument(7:10)=='TZP')then
       basis_set = "tzp"
 !      write(*,*) '    BASIS     = TZP'
+    elseif(uargument(7:10)=='TZD')then
+      basis_set = "tzd"
     else
       write(*,*) "    Unknown Argument :", uargument
     endif
@@ -1143,6 +1235,15 @@ subroutine parse_option(argument)
   elseif(uargument(1:5)=='DFRAC')then
     DoDFrac = .true.
 
+  elseif(uargument(1:9)=='SPINHOMO=')then
+    read(UArgument(10:),*) spin_homo
+
+  elseif(uargument(1:9)=='SPINLUMO=')then
+    read(UArgument(10:),*) spin_lumo
+
+  elseif(uargument(1:9)=='OMEGAREG=')then
+    read(UArgument(10:),*) OmegaReg
+
   elseif(uargument(1:4)=='DROP')then
     doDrop = .true.
 !    write(*,*) '    Dropping core'
@@ -1150,6 +1251,15 @@ subroutine parse_option(argument)
   elseif(uargument(1:6)=='NODROP')then
     doDrop = .false.
 !    write(*,*) '    Not dropping core'
+
+  elseif(uargument(1:4)=='DOIP')then
+    doIP = .true.
+
+  elseif(uargument(1:4)=='DOEA')then
+    doEA = .true.
+
+  elseif(uargument(1:6)=='CCMAX=')then
+    read(UArgument(7:),*) CCMAX
 
   elseif(uargument(1:9)=='NOSINGLES')then
     doSingles = .false.
@@ -1162,6 +1272,13 @@ subroutine parse_option(argument)
 
   elseif(uargument(1:6)=='RENORM')then
     doReNorm = .true.
+
+  elseif(uargument(1:8)=='NORENORM')then
+    doReNorm = .false.
+
+  elseif(uargument(1:8)=='DOFULLCC')then
+    doFullCC = .true.
+
 
   else
     write(*,*) "    Unknown Argument :", uargument

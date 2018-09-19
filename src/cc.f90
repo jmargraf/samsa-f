@@ -75,6 +75,78 @@ subroutine calc_Eccd(CCD,frac_occ)
     Eold  = Eccd
     t2old  = t2 !R0.5d0*(t2+t2old) ! uses mixing
 
+    !TODO:construct intermediates here
+       if(factorized)then
+       if(.not.allocated(X1))then
+         allocate(X1(MOZero:nOcc,nOcc+1:nmo,nOcc+1:nmo,nOcc+1:nmo),  &
+                  X2(MOZero:nOcc,MOZero:nOcc,MOZero:nOcc,MOZero:nOcc), &
+                  X3(nOcc+1:nmo,nOcc+1:nmo), &  
+                  X4(MOZero:nOcc,MOZero:nOcc))
+       endif       
+
+       do l=MOZero,nOcc
+         do d=nOcc+1,nmo 
+           do a=nOcc+1,nmo
+             do i=nOcc+1,nmo
+               Xin1 = 0.0d0
+               do k=MOZero,nOcc
+                 do c=nOcc+1,nmo 
+                   Xin1 = Xin1 + t2old(a,c,i,k)*AMO(k,l,c,d)
+                 enddo
+               enddo
+               X1(l,d,a,i) = Xin1
+             enddo
+           enddo
+         enddo
+       enddo
+
+       do k=MOZero,nOcc
+         do l=MOZero,nOcc
+           do i=MOZero,nOcc
+             do j=MOZero,nOcc
+               Xin2 = 0.0d0
+               do c=nOcc+1,nmo 
+                 do d=nOcc+1,nmo 
+                   Xin2 = Xin2 + t2old(c,d,i,j)*AMO(k,l,c,d)
+                 enddo
+               enddo
+               X2(k,l,i,j) = Xin2
+             enddo
+           enddo
+         enddo
+       enddo
+
+       do b=nOcc+1,nmo
+         do c=nOcc+1,nmo
+           Xin3 = 0.0d0
+           do k=MOZero,nOcc
+             do l=MOZero,nOcc
+               do d=nOcc+1,nmo
+                 Xin3 = Xin3 + t2old(b,d,k,l)*AMO(k,l,c,d)
+               enddo
+             enddo
+           enddo
+           X3(b,c) = Xin3
+         enddo
+       enddo
+
+
+       do k=MOZero,nOcc 
+         do j=MOZero,nOcc
+           Xin4 = 0.0d0
+           do l=MOZero,nOcc
+             do c=nOcc+1,nmo 
+               do d=nOcc+1,nmo
+                 Xin4 = Xin4 + t2old(c,d,j,l)*AMO(k,l,c,d) 
+               enddo
+             enddo
+           enddo
+           X4(k,j) = Xin4
+         enddo
+       enddo
+
+    endif
+
     !T2 equations
 !$OMP PARALLEL PRIVATE(i,j,a,b,k,l,c,d,Dijab,in1)
 !$OMP DO
@@ -134,7 +206,7 @@ subroutine calc_Eccd(CCD,frac_occ)
               enddo
             enddo
 
-            if(CCD)then ! do full CCD
+            if(CCD .and. .not. factorized)then ! do full CCD
             !Terms that are quadratic in T2
               do c = nOcc+1,nmo
                 do d = nOcc+1,nmo
@@ -158,6 +230,33 @@ subroutine calc_Eccd(CCD,frac_occ)
                   enddo
                 enddo
               enddo
+            elseif(CCD .and. factorized)then 
+               ! Sum over l,d
+                      in1 = in1 + 0.5d0 *  t2old(d,b,l,j) * X1(l,d,a,i)
+                     !in1 = in1 + 0.5d0 *  t2old(a,c,i,k)*t2old(d,b,l,j)   * AMO(k,l,c,d)
+                      in1 = in1 - 0.5d0 *  t2old(d,a,l,j) * X1(l,d,b,i)
+                     !in1 = in1 - 0.5d0 *  t2old(b,c,i,k)*t2old(d,a,l,j)   * AMO(k,l,c,d)
+                      in1 = in1 + 0.5d0 *  t2old(d,a,l,i) * X1(l,d,b,j) 
+                     !in1 = in1 + 0.5d0 *  t2old(b,c,j,k)*t2old(d,a,l,i)   * AMO(k,l,c,d)
+                      in1 = in1 - 0.5d0 *  t2old(d,b,l,i) * X1(l,d,a,j)
+                     !in1 = in1 - 0.5d0 *  t2old(a,c,j,k)*t2old(d,b,l,i)   * AMO(k,l,c,d)
+
+               ! Sum over k,l
+                      in1 = in1 + 0.25d0*  t2old(a,b,k,l) * X2(k,l,i,j)
+                     !in1 = in1 + 0.25d0*  t2old(c,d,i,j)*t2old(a,b,k,l)   * AMO(k,l,c,d)
+
+               ! Sum over c
+                      in1 = in1 - 0.5d0 *  t2old(a,c,i,j) * X3(b,c) 
+                     !in1 = in1 - 0.5d0 *  t2old(a,c,i,j)*t2old(b,d,k,l)   * AMO(k,l,c,d)
+                      in1 = in1 + 0.5d0 *  t2old(b,c,i,j) * X3(a,c)
+                     !in1 = in1 + 0.5d0 *  t2old(b,c,i,j)*t2old(a,d,k,l)   * AMO(k,l,c,d)
+
+               ! Sum over k
+                      in1 = in1 - 0.5d0 *  t2old(a,b,i,k) * X4(k,j)
+                     !in1 = in1 - 0.5d0 *  t2old(a,b,i,k)*t2old(c,d,j,l)   * AMO(k,l,c,d)
+                      in1 = in1 + 0.5d0 *  t2old(a,b,j,k) * X4(k,i)
+                     !in1 = in1 + 0.5d0 *  t2old(a,b,j,k)*t2old(c,d,i,l)   * AMO(k,l,c,d)
+
             endif
 
 

@@ -32,7 +32,7 @@ module module_data
   double precision                              :: Efermi = 0.0d0
   double precision                              :: OmegaReg = 1.0d-5
   logical                                       :: DoDamp = .true.
-  logical                                       :: DoReNorm = .false.
+  logical                                       :: DoReNorm = .true.
   logical                                       :: DoCIS = .false.
   logical                                       :: DoMBPT2 = .false.
   logical                                       :: DoDCPT2 = .false.

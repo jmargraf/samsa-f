@@ -164,7 +164,7 @@ end subroutine Fock_to_AO
 !#############################################
 subroutine do_guess()
   use module_data,      only : Fock,Hcore,Spins,dim_1e
-  use module_data,      only : guess
+  use module_data,      only : guess,nel,breaksymmetry
   use module_io,        only : print_Mat
   implicit none
   integer                   :: i
@@ -181,8 +181,11 @@ subroutine do_guess()
     write(*,*) ""
     do i=1,Spins
       Fock(:,:,i) = Hcore(:,:)
-      ! add random perturbation
-    enddo
+      ! add random perturbation 
+      if(i>1 .and. breaksymmetry)then
+          Fock(nel/2,nel/2,i) = Fock(nel/2,nel/2,i) + 1.0d-3
+      endif
+   enddo
   elseif(Guess == "huck")then
     call guess_huckel()
   endif
@@ -271,7 +274,7 @@ end subroutine guess_huckel
 !#############################################
 subroutine calc_Fock()
   use module_data, only      : Dens,Fock,Spins,dim_1e,ERI,Hcore
-  use module_data, only      : Sij,Par,Bastype,scaletype,Fockold
+  use module_data, only      : Sij,Par,Bastype,scaletype,Fockold,Basis
   use module_io, only        : print_Mat
   implicit none
   integer                         :: iSpin,i,j,k,l
@@ -381,7 +384,12 @@ subroutine calc_Fock()
 !           AddFactor   =   -sqrt(abs(Par(Bastype(i+1))*Par(Bastype(j+1))))*Sij(i+1,j+1)*Sij(k+1,l+1)
 !           AddFactor   = - Par(Bastype(i+1))*Par(Bastype(j+1))*Sij(i+1,j+1)*Sij(k+1,l+1)
            AddFactor   = -1.0d0*(Par(Bastype(i+1))*Par(Bastype(j+1)))*Sij(i+1,j+1)
-
+          elseif(scaletype==10)then
+            ScaleFactor = 0.0d0
+            AddFactor   = 0.0d0
+            if(Basis(i+1)==Basis(j+1) .and. Basis(i+1)==Basis(k+1) .and. Basis(i+1)==Basis(l+1))then
+                ScaleFactor = 1.0d0
+            endif 
           endif
 
           !UHF
@@ -402,6 +410,13 @@ subroutine calc_Fock()
         enddo
       enddo
 
+      if(scaletype==10)then
+        if( Basis(i+1) /= Basis(j+1) )then
+          Fock(i+1,j+1,1)     = 0.0d0
+          Fock(i+1,j+1,Spins) = 0.0d0
+        endif
+      endif
+
     enddo
   enddo
 !$OMP END DO
@@ -412,9 +427,9 @@ subroutine calc_Fock()
 !    Fock = Damp*Fock + (1.0d0-Damp)*Fockold
 !  endif
 
-!  do iSpin=1,Spins
-!    call print_Mat(Fock(:,:,iSpin),dim_1e,4,"Fock")
-!  enddo
+  !do iSpin=1,Spins
+  !  call print_Mat(Fock(:,:,iSpin),dim_1e,4,"Fock")
+  !enddo
 
 !  deallocate(Fockold)
 

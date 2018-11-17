@@ -150,6 +150,63 @@ subroutine calc_dSCF(doprint)
 end subroutine calc_dSCF
 
 !#############################################
+!#       Calculate CC energy derivatives
+!#############################################
+subroutine calc_dEcc(doprint)
+  !use module_data,          only : Occ,nOccA,nOccB,dim_1e,Eps,Spins,DropMO,Damp,Fock
+  !use module_energy,        only : Etot,calc_Embpt2,Embpt2f,Embpt2
+  !use module_scf,           only : run_SCF
+  !use module_trans,         only : trans_full
+
+  use module_data,          only : Occ,nOccA,nOccB,dim_1e,Eps,Spins,DropMO,Damp,Fock,DampCC
+  use module_data,          only : doIP,doEA,doFullCC,DoCCLS
+  use module_wavefun,       only : do_guess
+  use module_energy,        only : Etot,calc_Embpt2,Embpt2f,Embpt2
+  use module_scf,           only : run_SCF
+  use module_trans,         only : trans_full,trans_ucc
+  use module_cc,            only : Eccd,calc_Eccd,Ecc1,Ecc2
+  implicit none
+  logical, intent(IN)         :: doprint
+  integer                     :: i, iSpin
+  double precision            :: E0, dSCF, relax,E02, dEcc
+  double precision,allocatable:: Eps0(:,:)
+
+  E0 = Etot
+
+  allocate(Fock0(dim_1e,dim_1e,spins),Eps0(dim_1e,Spins))
+  Fock0 = Fock
+  Eps0  = Eps
+  E02   = Etot+Eccd
+
+  if(doprint)then
+    write(*,*) "    "
+    write(*,*) "    Calculating derivatives of CC energy w.r.t. orbital occupation numbers"
+    write(*,*) "    "
+    write(*,*) "    alpha channel:"
+    write(*,*) "         iOrb      dE+(SCF)   Eps(SCF)   dE+(CC) "
+  endif
+
+! Only uses Alpha Channel
+! IPs:
+  do i=nOccA,1,-1
+    Fock = Fock0
+    !Damp=0.05
+    Occ(i,1) = 0.99d0
+    call run_scf(.false.)
+    call trans_full(.false.)
+    call trans_ucc(.false.)
+    call calc_Eccd(doFullCC,.true.)
+    dSCF = (E0 - Etot)/0.01d0
+    dEcc = (E02-Etot-Eccd)/0.01d0
+    if(doprint)then
+      write(*,'("    IP: ",I5,3(" ",F12.5," "))') i, dSCF, Eps0(i,1), dEcc
+    endif
+    Occ(i,1) = 1.0d0
+  enddo
+
+end subroutine calc_dEcc
+
+!#############################################
 !#       Calculate fractional CC curve
 !#############################################
 subroutine calc_fracCC(doprint,spin_homo,spin_lumo)

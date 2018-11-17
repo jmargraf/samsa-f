@@ -682,7 +682,7 @@ end subroutine calc_Edcpt2
 !#            Calculate E_total
 !#############################################
 subroutine calc_Energy
-  use module_data, only      : Dens,Hcore,Fock,Spins,dim_1e
+  use module_data, only      : Dens,Hcore,Fock,Spins,dim_1e!,scaltype,Basis
   implicit none
   integer                   :: iSpin,i,j 
 
@@ -694,6 +694,7 @@ subroutine calc_Energy
   do iSpin=1,Spins
     do i=1,dim_1e
       do j=1,dim_1e
+        !if(Basis(i) /= Basis(j)) cycle
         E1e = E1e + Dens(i,j,iSpin)*Hcore(i,j)*(2.0d0/dble(Spins))
         E2e = E2e + Dens(i,j,iSpin)*(Fock(i,j,iSpin)-Hcore(i,j))*(1.0d0/dble(Spins))          
       enddo

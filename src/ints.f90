@@ -141,12 +141,25 @@ end subroutine
 !#            Calculate Hcore
 !#############################################
 subroutine calc_Hcore()
-  use module_data,        only : Hcore,Tij,Vij
+  use module_data,        only : Hcore,Tij,Vij,ScaleType,dim_1e,Basis
   implicit none
+  integer             :: i,j
 
   write(*,*) "    ... calc'ing Hcore "
 
   Hcore = Tij + Vij
+
+  if(ScaleType==10)then
+    do i=1,dim_1e
+      do j=1,dim_1e
+        if(Basis(i) == Basis(j))then
+          Hcore = Tij(i,j) + Vij(i,j)
+        else
+          Hcore = 0.0d0
+        endif
+      enddo
+    enddo
+  endif
 
   deallocate(Tij,Vij)
 

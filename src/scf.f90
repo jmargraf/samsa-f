@@ -100,7 +100,10 @@ subroutine run_SCF(DoPrint)
     call SemiCanonical()
     call Fock_to_AO()
     call Calc_Energy()
-
+  else
+    if(doGKSCF .or. doFTSCF)then
+      call set_Occupations()
+    endif
   endif
 
   if(DoPrint)then

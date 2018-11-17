@@ -671,13 +671,24 @@ subroutine calc_Eccd(CCD,frac_occ)
     do i=2,nmo,2
       SO_Occ(i-1) = Occ(i/2,1)
       SO_Occ(i) = Occ(i/2,2)
-      if ((SO_Occ(i-1) == 0.0d0) .and. (nfocca == -1)) then
+      if ((SO_Occ(i-1) < 1.0d-4) .and. (nfocca == -1)) then
           nfocca = i-1
+          SO_Occ(i-1) = 0.0d0
       endif
-      if ((SO_Occ(i) == 0.0d0) .and. (nfoccb == -1)) then
+      if ((SO_Occ(i) < 1.0d-4) .and. (nfoccb == -1)) then
           nfoccb = i
+          SO_Occ(i) = 0.0d0
       endif
     enddo
+
+    if(nfocca == -1)then
+        nfocca = nmo-1
+    endif
+    if(nfoccb == -1)then
+        nfoccb = nmo
+    endif
+
+    write(*,*) 'Occupation limits na nb:',nfocca,nfoccb
 
     nfocc = max(nfocca,nfoccb)
 
@@ -1034,6 +1045,14 @@ subroutine calc_Eccd(CCD,frac_occ)
 
   enddo ! t2 loop
 
+  endif
+
+  if(allocated(X1))then
+       deallocate(X1,X2,X3,X4)
+  endif
+
+  if(allocated(T2))then
+       deallocate(T2)
   endif
 
 end subroutine calc_Eccd

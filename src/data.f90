@@ -54,6 +54,8 @@ module module_data
   logical                                       :: doIP = .false.
   logical                                       :: doEA = .false.
   logical                                       :: doFullCC = .false.
+  logical                                       :: doCCDeriv = .false.
+  logical                                       :: breaksymmetry = .false.
   integer                                       :: Fract = 0 
   character(len=4)                              :: guess = "core"
   double precision                              :: Par(4) = 0.0d0
@@ -1202,9 +1204,11 @@ subroutine parse_option(argument)
 
   elseif(uargument(1:4)=='LCCD')then
     doLCCD = .true.
+    doFullCC = .false.
 
   elseif(uargument(1:3)=='CCD')then
     doCCD = .true.
+    doFullCC = .true.
 
   elseif(uargument(1:3)=='CIS')then
     doCIS = .true.
@@ -1279,6 +1283,11 @@ subroutine parse_option(argument)
   elseif(uargument(1:8)=='DOFULLCC')then
     doFullCC = .true.
 
+  elseif(uargument(1:9)=='DOCCDERIV')then
+    doCCDeriv = .true.
+
+  elseif(uargument(1:13)=='BREAKSYMMETRY')then
+    breaksymmetry = .true.
 
   else
     write(*,*) "    Unknown Argument :", uargument
